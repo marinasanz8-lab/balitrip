@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="./firebase-config.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <style>
+    body { margin:0; background:#08111F; }
+    ::selection { background:#0F766E; color:#F8F4E8; }
+    * { box-sizing:border-box; }
+    ::-webkit-scrollbar { width:10px; }
+    ::-webkit-scrollbar-track { background:#08111F; }
+    ::-webkit-scrollbar-thumb { background:#14352f; border-radius:10px; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes drift { 0%{ transform:translateY(0px);} 50%{ transform:translateY(-14px);} 100%{ transform:translateY(0px);} }
+  </style>
+<style>.no-scrollbar::-webkit-scrollbar{display:none}</style>
+</helmet>
+
+<div style="font-family:'Manrope',sans-serif; background:#08111F; color:#F8F4E8; min-height:100vh; overflow-x:hidden;">
+
+  <!-- NAV -->
+  <div style="position:fixed; top:0; left:0; right:0; z-index:50; display:flex; align-items:center; justify-content:space-between; padding:22px clamp(20px,5vw,64px); background:linear-gradient(180deg, rgba(8,17,31,0.9), rgba(8,17,31,0)); backdrop-filter:blur(6px);">
+    <div style="font-family:'Cormorant Garamond',serif; font-size:22px; letter-spacing:0.08em; color:#F8F4E8;">BALI · GILI · LOMBOK</div>
+    <div style="display:flex; gap:clamp(10px,3vw,28px); font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:rgba(248,244,232,0.65);">
+      <a href="#itinerario" style="color:inherit; text-decoration:none;">Itinerario</a>
+      <a href="#hoteles" style="color:inherit; text-decoration:none;">Hoteles</a>
+      <a href="#checklist" style="color:inherit; text-decoration:none;">Checklist</a>
+      <a href="#presupuesto" style="color:inherit; text-decoration:none;">Presupuesto</a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div style="position:relative; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 clamp(20px,6vw,80px); background-image:url('uploads/pasted-1783927006868-0.png'); background-size:cover; background-position:center 60%;">
+    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(8,17,31,0.75) 0%, rgba(8,17,31,0.55) 45%, rgba(8,17,31,0.85) 100%);"></div>
+    <div style="position:relative; display:flex; flex-direction:column; align-items:center; animation:fadeUp 1s ease both;">
+      <div style="display:flex; align-items:center; gap:10px; font-size:13px; letter-spacing:0.22em; text-transform:uppercase; color:#F8F4E8; margin-bottom:26px;">
+        <i data-lucide="compass" style="width:16px;height:16px;"></i>
+        12 — 25 Septiembre 2026
+      </div>
+      <h1 style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:clamp(48px,9vw,128px); line-height:0.98; margin:0; color:#F8F4E8; text-shadow:0 4px 30px rgba(0,0,0,0.35);">
+        Indonesia<span style="color:#F8F4E8;">.</span>
+      </h1>
+      <h2 style="font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:400; font-size:clamp(24px,4vw,44px); margin:8px 0 30px; color:rgba(248,244,232,0.9);">
+        Bali &amp; Gili Islands &amp; Lombok
+      </h2>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 18px 34px; margin-bottom: 44px; width: 100%">
+        <div style="display:flex; gap:10px;">
+          <sc-for list="{{ travelers }}" as="t" hint-placeholder-count="4">
+
+          </sc-for>
+        </div>
+        <div style="font-size:15px; color:rgba(248,244,232,0.85); letter-spacing:0.02em;">Victor · Mercè · Eva · Marina</div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:clamp(20px,4vw,48px);">
+        <sc-for list="{{ countdownUnits }}" as="u" hint-placeholder-count="4">
+          <div style="display:flex; flex-direction:column; align-items:center;">
+            <div style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:clamp(44px,7vw,84px); line-height:1; color:#F8F4E8; text-shadow:0 4px 24px rgba(0,0,0,0.4);">{{ u.value }}</div>
+            <div style="font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(248,244,232,0.75); margin-top:10px;">{{ u.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="position:absolute; bottom:40px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:10px; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(248,244,232,0.7); animation:drift 3s ease-in-out infinite;">
+      <i data-lucide="chevron-down" style="width:16px;height:16px;"></i> Desliza para el itinerario
+    </div>
+  </div>
+
+  <!-- FLIGHT CARD -->
+  <div style="padding:100px clamp(20px,6vw,80px); background:#08111F;">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="font-size:13px; letter-spacing:0.2em; text-transform:uppercase; color:#38BDF8; margin-bottom:14px;">Vuelos</div>
+      <h3 style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:clamp(30px,4vw,48px); margin:0 0 40px; max-width:640px;">BCN - DPS</h3>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px;">
+        <sc-for list="{{ flights }}" as="f" hint-placeholder-count="2">
+          <div style="background:rgba(248,244,232,0.04); border:1px solid rgba(248,244,232,0.1); backdrop-filter:blur(14px); border-radius:20px; padding:32px;">
+            <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(248,244,232,0.5); margin-bottom:18px;">{{ f.label }}</div>
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:18px;">
+              <div style="font-family:'Cormorant Garamond',serif; font-size:38px; color:#F8F4E8;">{{ f.depTime }}</div>
+              <div style="flex:1; height:1px; background:rgba(56,189,248,0.4); position:relative;">
+                <i data-lucide="plane" style="width:16px;height:16px; position:absolute; top:-8px; left:50%; transform:translateX(-50%) rotate(90deg); color:#38BDF8; background:#08111F;"></i>
+              </div>
+              <div style="font-family:'Cormorant Garamond',serif; font-size:38px; color:#F8F4E8;">{{ f.arrTime }}</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:14px; color:rgba(248,244,232,0.7); margin-bottom:14px;">
+              <span>{{ f.from }}</span>
+              <span>{{ f.to }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:rgba(248,244,232,0.45); border-top:1px solid rgba(248,244,232,0.08); padding-top:14px;">
+              <span>{{ f.duration }}</span>
+              <span>{{ f.date }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROUTE OVERVIEW -->
+  <div style="padding:0 clamp(20px,6vw,80px) 100px;">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px;">
+        <sc-for list="{{ legs }}" as="leg" hint-placeholder-count="4">
+          <div style="position:relative; height:320px; border-radius:20px; overflow:hidden; border:1px solid rgba(248,244,232,0.1);">
+            <div style="position:absolute; inset:0;">
+              <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="{{ leg.slotId }}" src="{{ leg.photo }}" shape="rect" placeholder="Foto de {{ leg.name }}" hint-size="100%,100%" style="width:100%; height:100%;"></x-import>
+            </div>
+            <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(8,17,31,0) 40%, rgba(8,17,31,0.9) 100%); pointer-events:none;"></div>
+            <div style="position:absolute; left:24px; bottom:22px; right:24px; pointer-events:none;">
+              <i data-lucide="{{ leg.icon }}" style="width:20px; height:20px; color:#38BDF8; margin-bottom:10px;"></i>
+              <div style="font-family:'Cormorant Garamond',serif; font-size:26px; color:#F8F4E8; margin-bottom:4px;">{{ leg.name }}</div>
+              <div style="font-size:13px; color:rgba(248,244,232,0.75);">{{ leg.dates }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY BY DAY -->
+  <div id="itinerario" style="padding:20px clamp(20px,6vw,80px) 110px; scroll-margin-top:80px;">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="font-size:13px; letter-spacing:0.2em; text-transform:uppercase; color:#38BDF8; margin-bottom:14px;">Día a día</div>
+      <h3 style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:clamp(30px,4vw,48px); margin:0 0 40px;">Ruta completa</h3>
+
+      <div class="no-scrollbar" style="display:flex; gap:10px; overflow-x:auto; scrollbar-width:none; padding-bottom:6px; margin-bottom:36px;">
+        <sc-for list="{{ days }}" as="d" hint-placeholder-count="9">
+          <button onclick="{{ d.select }}" style="height: 47px; color: #FFFFFF; background-color: #141414; border-radius: 7px; opacity: 1; border-width: 1px; border-style: solid; border-color: #6D6D6D">
+            <div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; opacity:0.7;">{{ d.dateLabel }}</div>
+            <div style="font-size:14px; font-weight:700; margin-top:4px; white-space:nowrap;">{{ d.shortTitle }}</div>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="background:rgba(248,244,232,0.03); border:1px solid rgba(248,244,232,0.08); border-radius:24px; padding:clamp(24px,4vw,48px);">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:8px;">
+          <i data-lucide="{{ selectedDay.icon }}" style="width:26px; height:26px; color:#0F766E;"></i>
+          <div style="font-size:13px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(248,244,232,0.55);">{{ selectedDay.dateLabel }}</div>
+        </div>
+        <h4 style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:clamp(26px,3.4vw,38px); margin:6px 0 12px;">{{ selectedDay.title }}</h4>
+        <p style="font-size:16px; line-height:1.6; color:rgba(248,244,232,0.72); max-width:760px; margin:0 0 36px;">{{ selectedDay.subtitle }}</p>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px;">
+          <sc-for list="{{ selectedDay.places }}" as="place" hint-placeholder-count="3">
+            <div style="background:rgba(8,17,31,0.55); border:1px solid rgba(248,244,232,0.08); border-radius:18px; padding:26px; display:flex; flex-direction:column; gap:14px;">
+              <div style="width:44px; height:44px; border-radius:12px; background:rgba(15,118,110,0.25); display:flex; align-items:center; justify-content:center;">
+                <i data-lucide="{{ place.icon }}" style="width:20px; height:20px; color:#38BDF8;"></i>
+              </div>
+              <div style="font-family:'Cormorant Garamond',serif; font-size:22px;">{{ place.name }}</div>
+              <div style="font-size:14px; line-height:1.55; color:rgba(248,244,232,0.68);">{{ place.desc }}</div>
+              <div style="margin-top:auto; padding-top:14px; border-top:1px solid rgba(248,244,232,0.08); display:flex; gap:8px; align-items:flex-start;">
+                <i data-lucide="lightbulb" style="width:15px; height:15px; color:#F8F4E8; opacity:0.7; margin-top:2px; flex-shrink:0;"></i>
+                <div style="font-size:12.5px; line-height:1.5; color:rgba(248,244,232,0.6);"><strong style="color:#F8F4E8; opacity:0.9;">Tip pro:</strong> {{ place.tip }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOTELS -->
+  <div id="hoteles" style="padding:20px clamp(20px,6vw,80px) 110px; scroll-margin-top:80px;">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="font-size:13px; letter-spacing:0.2em; text-transform:uppercase; color:#38BDF8; margin-bottom:14px;">Alojamiento</div>
+      <h3 style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:clamp(30px,4vw,48px); margin:0 0 30px;">Dónde nos quedamos</h3>
+
+      <div class="no-scrollbar" style="display:flex; gap:24px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; margin:0 -4px; scroll-snap-type:x proximity;">
+        <sc-for list="{{ activeHotels }}" as="h" hint-placeholder-count="5">
+          <div style="flex:0 0 380px; scroll-snap-align:start; background:rgba(248,244,232,0.04); border:1px solid rgba(248,244,232,0.1); border-radius:22px; overflow:hidden;">
+            <div onclick="{{ h.openGallery }}" style="height:260px; position:relative; cursor:{{ h.mainCursor }}; background:rgba(8,17,31,0.4);">
+              <sc-if value="{{ h.hasPhoto }}" hint-placeholder-val="{{ true }}">
+                <img src="{{ h.cover }}" alt="{{ h.name }}" style="width:100%; height:100%; object-fit:cover; display:block;">
+                <div style="position:absolute; bottom:12px; right:12px; background:rgba(8,17,31,0.65); backdrop-filter:blur(6px); border-radius:8px; padding:5px 9px; display:flex; align-items:center; gap:5px; font-size:11px; color:#F8F4E8;">
+                  <i data-lucide="images" style="width:13px;height:13px;"></i>{{ h.photoCount }}
+                </div>
+              </sc-if>
+              <sc-if value="{{ h.noPhoto }}">
+                <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:rgba(248,244,232,0.35);">
+                  <i data-lucide="camera" style="width:30px; height:30px;"></i>
+                  <div style="font-size:11px; letter-spacing:0.06em; text-align:center;">FOTO PENDIENTE</div>
+                </div>
+              </sc-if>
+            </div>
+            <sc-if value="{{ h.hasCollage }}">
+              <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:3px; padding:3px;">
+                <sc-for list="{{ h.collage }}" as="c" hint-placeholder-count="3">
+                  <div onclick="{{ c.open }}" style="height:80px; cursor:pointer; overflow:hidden; border-radius:6px;">
+                    <img src="{{ c.src }}" alt="" style="width:100%; height:100%; object-fit:cover; display:block;">
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="padding:24px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;">
+                <div style="font-family:'Cormorant Garamond',serif; font-size:23px;">{{ h.name }}</div>
+                <sc-if value="{{ h.badgeText }}"><div style="{{ h.badgeStyle }}">{{ h.badgeText }}</div></sc-if>
+              </div>
+              <div style="font-size:12px; color:rgba(248,244,232,0.55); margin-bottom:10px;">{{ h.dates }}</div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:13px; color:rgba(248,244,232,0.68);">{{ h.note }}</div>
+                <sc-if value="{{ h.price }}"><div style="font-family:'Cormorant Garamond',serif; font-size:20px; color:#0F766E;">{{ h.price }}</div></sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div id="checklist" style="padding:20px clamp(20px,6vw,80px) 110px; scroll-margin-top:80px;">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="font-size:13px; letter-spacing:0.2em; text-transform:uppercase; color:#38BDF8; margin-bottom:14px;">Preparación</div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:30px;">
+        <h3 style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:clamp(30px,4vw,48px); margin:0;">Checklist del viaje</h3>
+        <div style="font-size:14px; color:rgba(248,244,232,0.6);">{{ checklistDone }} / {{ checklistTotal }} listo</div>
+      </div>
+      <div style="height:4px; background:rgba(248,244,232,0.08); border-radius:4px; margin-bottom:36px; overflow:hidden;">
+        <div style="{{ checklistBarStyle }}"></div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:28px;">
+        <sc-for list="{{ checklistGroups }}" as="group" hint-placeholder-count="3">
+          <div>
+            <div style="font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(248,244,232,0.5); margin-bottom:16px;">{{ group.name }}</div>
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <sc-for list="{{ group.items }}" as="item" hint-placeholder-count="4">
+                <div onclick="{{ item.toggle }}" style="{{ item.rowStyle }}">
+                  <div style="{{ item.boxStyle }}"><sc-if value="{{ item.checked }}"><i data-lucide="check" style="width:13px;height:13px;color:#08111F;"></i></sc-if></div>
+                  <i data-lucide="{{ item.icon }}" style="width:17px;height:17px; color:rgba(248,244,232,0.5); flex-shrink:0;"></i>
+                  <div style="{{ item.textStyle }}">{{ item.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUDGET -->
+  <div id="presupuesto" style="padding:20px clamp(20px,6vw,80px) 140px; scroll-margin-top:80px;">
+    <div style="max-width:1180px; margin:0 auto;">
+      <div style="font-size:13px; letter-spacing:0.2em; text-transform:uppercase; color:#38BDF8; margin-bottom:14px;">Presupuesto</div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:24px; margin-bottom:36px;">
+        <h3 style="font-family:'Cormorant Garamond',serif; font-weight:500; font-size:clamp(30px,4vw,48px); margin:0;">Gastos del viaje</h3>
+        <div style="text-align:right;">
+          <div style="font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(248,244,232,0.5);">Total · 4 personas</div>
+          <div style="font-family:'Cormorant Garamond',serif; font-size:44px; color:#0F766E;">{{ budgetTotalFmt }}</div>
+          <div style="font-size:13px; color:rgba(248,244,232,0.5);">{{ budgetPerPersonFmt }} / persona</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:28px; align-items:start;">
+        <div style="display:flex; flex-direction:column; gap:22px;">
+          <sc-for list="{{ budgetCategories }}" as="cat" hint-placeholder-count="4">
+            <div style="background:rgba(248,244,232,0.03); border:1px solid rgba(248,244,232,0.08); border-radius:18px; padding:24px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <i data-lucide="{{ cat.icon }}" style="width:18px; height:18px; color:#38BDF8;"></i>
+                  <div style="font-size:15px; font-weight:700;">{{ cat.name }}</div>
+                </div>
+                <div style="font-family:'Cormorant Garamond',serif; font-size:22px; color:#F8F4E8;">{{ cat.totalFmt }}</div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <sc-for list="{{ cat.items }}" as="it" hint-placeholder-count="2">
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:rgba(8,17,31,0.4); border-radius:10px; font-size:13.5px;">
+                    <span style="color:rgba(248,244,232,0.78);">{{ it.label }}</span>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <span style="color:#F8F4E8; font-weight:600;">{{ it.amountFmt }}</span>
+                      <sc-if value="{{ it.removable }}">
+                        <button onclick="{{ it.remove }}" style="background:none; border:none; color:rgba(248,244,232,0.35); cursor:pointer; padding:0; display:flex;"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:linear-gradient(160deg, rgba(15,118,110,0.18), rgba(56,189,248,0.06)); border:1px solid rgba(56,189,248,0.25); border-radius:18px; padding:26px; position:sticky; top:90px;">
+          <div style="font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(248,244,232,0.6); margin-bottom:18px;">Añadir gasto</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <input value="{{ newExpenseLabel }}" oninput="{{ onLabelChange }}" placeholder="Descripción (ej. Excursión cascadas)" style="background:rgba(8,17,31,0.5); border:1px solid rgba(248,244,232,0.15); border-radius:10px; padding:12px 14px; color:#F8F4E8; font-size:14px; font-family:'Manrope',sans-serif;">
+            <input value="{{ newExpenseAmount }}" oninput="{{ onAmountChange }}" placeholder="Importe (€)" inputmode="decimal" style="background:rgba(8,17,31,0.5); border:1px solid rgba(248,244,232,0.15); border-radius:10px; padding:12px 14px; color:#F8F4E8; font-size:14px; font-family:'Manrope',sans-serif;">
+            <select value="{{ newExpenseCategory }}" onchange="{{ onCategoryChange }}" style="background:rgba(8,17,31,0.5); border:1px solid rgba(248,244,232,0.15); border-radius:10px; padding:12px 14px; color:#F8F4E8; font-size:14px; font-family:'Manrope',sans-serif;">
+              <sc-for list="{{ budgetCategoryOptions }}" as="opt" hint-placeholder-count="6">
+                <option value="{{ opt.id }}">{{ opt.name }}</option>
+              </sc-for>
+            </select>
+            <button onclick="{{ addExpense }}" style="margin-top:6px; background:#0F766E; border:none; border-radius:10px; padding:13px; color:#F8F4E8; font-size:14px; font-weight:700; letter-spacing:0.02em; cursor:pointer;">Añadir al presupuesto</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYNC STATUS -->
+  <div style="position:fixed; bottom:18px; right:18px; z-index:60; display:flex; align-items:center; gap:8px; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:rgba(248,244,232,0.55); background:rgba(8,17,31,0.7); backdrop-filter:blur(8px); border:1px solid rgba(248,244,232,0.1); border-radius:20px; padding:8px 14px;">
+    <i data-lucide="{{ syncStatus.icon }}" style="width:13px;height:13px; color:{{ syncStatus.color }};"></i>{{ syncStatus.label }}
+  </div>
+
+  <!-- LIGHTBOX -->
+  <sc-if value="{{ lightbox.open }}">
+    <div onclick="{{ closeLightbox }}" style="position:fixed; inset:0; background:rgba(8,17,31,0.92); backdrop-filter:blur(10px); z-index:200; display:flex; align-items:center; justify-content:center; padding:40px;">
+      <button onclick="{{ closeLightbox }}" style="position:absolute; top:26px; right:30px; background:rgba(248,244,232,0.08); border:1px solid rgba(248,244,232,0.2); border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer;"><i data-lucide="x" style="width:20px;height:20px; color:#F8F4E8;"></i></button>
+      <div onclick="{{ stopProp }}" style="max-width:900px; width:100%;">
+        <div style="font-family:'Cormorant Garamond',serif; font-size:26px; color:#F8F4E8; margin-bottom:16px; text-align:center;">{{ lightbox.name }}</div>
+        <div style="position:relative; display:flex; align-items:center; justify-content:center;">
+          <button onclick="{{ prevPhoto }}" style="position:absolute; left:-14px; background:rgba(248,244,232,0.1); border:1px solid rgba(248,244,232,0.2); border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2;"><i data-lucide="chevron-left" style="width:20px;height:20px; color:#F8F4E8;"></i></button>
+          <img src="{{ lightbox.photo }}" style="max-width:100%; max-height:70vh; border-radius:16px; object-fit:contain;">
+          <button onclick="{{ nextPhoto }}" style="position:absolute; right:-14px; background:rgba(248,244,232,0.1); border:1px solid rgba(248,244,232,0.2); border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2;"><i data-lucide="chevron-right" style="width:20px;height:20px; color:#F8F4E8;"></i></button>
+        </div>
+        <div style="text-align:center; margin-top:16px; font-size:13px; color:rgba(248,244,232,0.5);">{{ lightbox.counter }}</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- FOOTER -->
+  <div style="padding:50px clamp(20px,6vw,80px); border-top:1px solid rgba(248,244,232,0.08); display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:rgba(248,244,232,0.4);">
+    <div>Indonesia · Bali, Gili &amp; Lombok</div>
+    <div>12 — 25 Septiembre 2026</div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const DAYS = [
+  { id:'d0', dateLabel:'13 SEP', shortTitle:'Llegada', icon:'plane-landing', title:'Llegada a Bali', subtitle:'Aterrizaje a las 23:50 en Denpasar (DPS). Traslado directo al hotel para dormir, con salida hacia Ubud a la mañana siguiente.',
+    places:[
+      { icon:'bed', name:'Grandmas Plus Hotel Airport', desc:'Hotel de 1 noche junto al aeropuerto en Tuban, Kuta. 4 adultos en 2 habitaciones dobles, desayuno incluido.', tip:'Check-in desde las 15:00, pero con vuelo nocturno el hotel suele guardar la habitación — avisa la hora de llegada.' }
+    ] },
+  { id:'d1', dateLabel:'14 SEP', shortTitle:'Rumbo a Ubud', icon:'car', title:'Rumbo a Ubud', subtitle:'Cogemos coche hacia Ubud por la mañana. Día de traslado e instalación en el corazón cultural de Bali.',
+    places:[
+      { icon:'car', name:'Traslado Kuta → Ubud', desc:'Trayecto en coche privado de aproximadamente 1h-1h30 según tráfico, atravesando arrozales y pueblos.', tip:'Sal pronto (antes de las 9:00) para evitar el tráfico de acceso a Ubud.' }
+    ] },
+  { id:'d2', dateLabel:'15 SEP', shortTitle:'Día 1 · Cultura', icon:'landmark', title:'Inmersión Cultural y Tradición', subtitle:'Un recorrido por la Bali más auténtica: un pueblo tradicional intacto, un templo de purificación sagrado y las icónicas terrazas de arroz.',
+    places:[
+      { icon:'landmark', name:'Pueblo Tradicional Penglipuran', desc:'Aldea impecable con arquitectura balinesa intacta, calles alineadas y un hermoso bosque de bambú al final.', tip:'Visita a primera hora para tener las calles vacías y mejor luz para fotos.' },
+      { icon:'droplets', name:'Pura Tirta Empul', desc:'Templo hindú con manantial de agua sagrada para el ritual de purificación (Melukat) y estanques de carpas koi.', tip:'Lleva sarong (o alquílalo allí) y una muda de ropa seca si te bañas en el manantial.' },
+      { icon:'wheat', name:'Terrazas de Arroz de Tegallalang', desc:'Campos escalonados icónicos, senderos empinados, columpios sobre palmeras y luz perfecta al atardecer.', tip:'Calzado con buen agarre — los senderos son estrechos y resbaladizos tras la lluvia.' }
+    ] },
+  { id:'d3', dateLabel:'16 SEP', shortTitle:'Día 2 · Ubud', icon:'trees', title:'El Corazón Verde de Ubud', subtitle:'Un respiro en la selva urbana de Ubud, entre templos antiguos devorados por la naturaleza y sus habitantes más traviesos.',
+    places:[
+      { icon:'trees', name:'Sacred Monkey Forest Sanctuary', desc:'Bosque denso en el centro de Ubud, tres templos antiguos devorados por raíces gigantes y macacos de cola larga.', tip:'Visita matutina recomendada; guarda gafas de sol y objetos sueltos, los monos son curiosos.' }
+    ] },
+  { id:'d4', dateLabel:'17 SEP', shortTitle:'Día 3 · Cascadas', icon:'waves', title:'Tour de Cascadas Escénicas', subtitle:'Un día dedicado al agua: dos cascadas muy distintas entre selva, roca volcánica y piscinas turquesas.',
+    places:[
+      { icon:'waves', name:'Cascada Tibumana', desc:'Caída de agua recta y simétrica en una piscina natural turquesa, rodeada de puentes de bambú y selva.', tip:'Menos concurrida a media mañana; lleva calzado de agua para las rocas.' },
+      { icon:'droplet', name:'Cascada Kanto Lampo', desc:'Impresionante caída escalonada sobre rocas negras, ideal para fotos dentro de la cortina de agua y de muy fácil acceso.', tip:'Se forman colas para la foto bajo el agua — ve a primera hora o última de la tarde.' }
+    ] },
+  { id:'d5', dateLabel:'18 SEP', shortTitle:'Día 4 · Centro Ubud', icon:'footprints', title:'Senderismo y Centro de Ubud', subtitle:'Mañana activa en las alturas y tarde cultural en el centro histórico, antes de partir hacia las Gili.',
+    places:[
+      { icon:'footprints', name:'Campuhan Ridge Walk', desc:'Caminata matutina por senderos en lo alto de la colina con vistas a los valles y palmeras.', tip:'Empieza al amanecer — hay poca sombra y aprieta el calor a media mañana.' },
+      { icon:'landmark', name:'Puri Saren Agung & Mercado de Arte', desc:'Tarde cultural en el centro histórico recorriendo la arquitectura del palacio y comprando artesanías locales en el mercado.', tip:'El regateo en el mercado es habitual — empieza ofreciendo la mitad del precio inicial.' }
+    ] },
+  { id:'d6', dateLabel:'18—21 SEP', shortTitle:'Gili Islands', icon:'palmtree', title:'Relax en Gili', subtitle:'Transporte y barco desde Ubud hacia las islas Gili. Tres días sin coches ni motos — solo bicicletas, carros de caballos y arena blanca.',
+    places:[
+      { icon:'ship', name:'Traslado Ubud → Gili', desc:'Coche hasta el puerto y barco rápido hacia las islas Gili. Sin tráfico rodado en la isla, todo se mueve a pie o en bici.', tip:'Reserva el barco con antelación en temporada alta y confirma el punto de recogida del hotel.' },
+      { icon:'anchor', name:'Snorkel y playas', desc:'Aguas cristalinas con tortugas marinas fáciles de ver desde la orilla y arrecifes de coral cercanos.', tip:'El snorkel con tortugas suele ser mejor en la costa este al amanecer, con menos barcos.' }
+    ] },
+  { id:'d7', dateLabel:'21 SEP', shortTitle:'Llegada a Lombok', icon:'mountain', title:'Lombok', subtitle:'Última etapa del viaje en Kuta Lombok, con playas más salvajes y menos turismo que Bali, base para descansar antes del regreso.',
+    places:[
+      { icon:'ship', name:'Traslado Gili → Lombok', desc:'Barco corto hasta la costa de Lombok y traslado hasta la zona de Kuta Lombok.', tip:'El mar puede estar movido a media mañana — trayectos temprano suelen ser más tranquilos.' }
+    ] },
+  { id:'d7b', dateLabel:'22 SEP', shortTitle:'Día 1 · Cascadas y playa', icon:'waves', title:'Cascadas Benang Stokel & Kelambu, Cultura y Playa', subtitle:'Tour de día completo (10h, GetYourGuide, ~43€/persona) con recogida en el hotel: cascadas gemelas en la jungla, un pueblo tejedor tradicional y las mejores playas del sur de Lombok al atardecer.',
+    places:[
+      { icon:'waves', name:'Cascada Benang Stokel', desc:'Primera parada del tour: dos cascadas gemelas cayendo entre acantilados y vegetación exuberante, con zona para un baño refrescante.', tip:'Lleva bañador debajo de la ropa — se puede nadar en la poza.' },
+      { icon:'droplet', name:'Cascada Benang Kelambu', desc:'A un corto trekking de Benang Stokel, esta cascada cae como una cortina de agua sobre la roca cubierta de musgo — única en Lombok.', tip:'Calzado de agua o trekking con buen agarre; el sendero es de jungla.' },
+      { icon:'shirt', name:'Pueblo Tejedor de Sukarara', desc:'Inmersión cultural con las tejedoras locales (\'ibu-ibu\'), tradición de tejido a telar de cintura transmitida de generación en generación.', tip:'Buen sitio para comprar un sarong o tela típica como recuerdo, apoyando a las artesanas.' },
+      { icon:'palmtree', name:'Playa de Tanjung Aan', desc:'Playa de arena blanca y aguas turquesas y tranquilas, famosa por tener dos tipos de arena — gruesa y fina como pimienta.', tip:'Buen momento para bañarse y tomar un coco fresco frente al mar.' },
+      { icon:'mountain', name:'Colina de Merese', desc:'Cierre del día subiendo esta colina panorámica sobre la costa para ver el atardecer sobre las bahías turquesas.', tip:'Sube unos 20-30 min antes de la puesta de sol para coger buen sitio.' }
+    ] },
+  { id:'d7c', dateLabel:'23 SEP', shortTitle:'Día 2 · Gili secretas', icon:'anchor', title:'Gili Nanggu, Sudak & Kedis con GoPro', subtitle:'Excursión de día completo (GetYourGuide, 161€ para 4 personas con traslado, salida 8:00 desde Kuta) a tres islas Gili "secretas" del suroeste de Lombok — snorkel, playas vírgenes y vídeo con GoPro incluido.',
+    places:[
+      { icon:'ship', name:'Recogida en el hotel · 08:00', desc:'Traslado privado desde Kuta Lombok hasta el puerto de embarque, incluido en el precio del tour.', tip:'Ten el bañador puesto y protector solar aplicado antes de la recogida para no perder tiempo.' },
+      { icon:'anchor', name:'Gili Nanggu', desc:'La más tranquila de las tres, con arrecife de coral accesible desde la orilla y aguas en calma ideales para snorkel.', tip:'Suele ser la primera parada — aprovecha la luz de la mañana para las fotos con GoPro.' },
+      { icon:'waves', name:'Gili Sudak', desc:'Isla pequeña con una laguna de aguas someras y arena blanca, perfecta para relajarse entre sesiones de snorkel.', tip:'Buen sitio para el almuerzo si el tour lo incluye.' },
+      { icon:'palmtree', name:'Gili Kedis', desc:'Un islote diminuto —apenas un puñado de palmeras— rodeado de arena blanca, de los rincones más fotogénicos y menos concurridos de Lombok.', tip:'Ideal para el vídeo GoPro grupal antes de volver al hotel al atardecer.' }
+    ] },
+  { id:'d7d', dateLabel:'24 SEP', shortTitle:'Vuelta a Bali · Uluwatu', icon:'church', title:'Vuelta a Bali: Uluwatu', subtitle:'Por la mañana volvemos de Lombok a Bali. Pasamos el día en la península de Uluwatu, durmiendo allí esa noche.',
+    places:[
+      { icon:'ship', name:'Traslado Lombok → Bali', desc:'Barco/ferry de vuelta desde Lombok a Bali por la mañana, seguido de traslado por carretera hasta Uluwatu.', tip:'Sal a primera hora — es el trayecto más largo del viaje, casi un día completo de traslado + tarde libre.' },
+      { icon:'church', name:'Templo de Uluwatu', desc:'Templo hindú en lo alto de un acantilado sobre el océano, famoso por sus atardeceres y la danza Kecak.', tip:'Ve a última hora de la tarde para el atardecer; cuidado con los monos y los objetos sueltos.' },
+      { icon:'waves', name:'Playas de Uluwatu', desc:'Calas escondidas al pie de los acantilados con algunas de las mejores olas de Bali para surf.', tip:'Acceso por escaleras empinadas — buen calzado y algo de tiempo extra.' }
+    ] },
+  { id:'d8', dateLabel:'25 SEP', shortTitle:'Vuelta', icon:'plane-takeoff', title:'Vuelo a Barcelona', subtitle:'Traslado de Uluwatu al aeropuerto de Denpasar y vuelo de regreso a Barcelona a las 18:45 (llegada 07:35 +1, con una escala).',
+    places:[
+      { icon:'plane-takeoff', name:'Denpasar (DPS) → Barcelona (BCN)', desc:'Salida 18:45 desde Denpasar, 1 escala, 18h 50min de viaje total. Llegada a Barcelona a las 07:35 del día siguiente.', tip:'Deja margen para el traslado desde Uluwatu — factura equipaje con tiempo de sobra en DPS.' }
+    ] }
+];
+
+const FLIGHTS = [
+  { label:'Ida · Sábado 12 Sep', depTime:'22:30', arrTime:'23:30 +1', from:'Barcelona (BCN)', to:'Denpasar (DPS)', duration:'19h 00min · 1 escala', date:'12 Sep 2026' },
+  { label:'Vuelta · Viernes 25 Sep', depTime:'18:45', arrTime:'07:35 +1', from:'Denpasar (DPS)', to:'Barcelona (BCN)', duration:'18h 50min · 1 escala', date:'25 Sep 2026' }
+];
+
+const LEGS = [
+  { name:'Ubud', dates:'14 — 18 Septiembre', icon:'trees', slotId:'leg-ubud', photo:'uploads/pasted-1783927006868-0.png' },
+  { name:'Gili Islands', dates:'18 — 21 Septiembre', icon:'palmtree', slotId:'leg-gili', photo:'uploads/pasted-1783927374569-0.png' },
+  { name:'Lombok', dates:'21 — 24 Septiembre', icon:'mountain', slotId:'leg-lombok', photo:'uploads/pasted-1783927471048-0.png' },
+  { name:'Uluwatu', dates:'24 — 25 Septiembre', icon:'church', slotId:'leg-uluwatu', photo:'uploads/pasted-1783927404856-0.png' }
+];
+
+const HOTELS = [
+  { name:'Grandmas Plus Hotel Airport', dates:'13 — 14 Sep · 1 noche, 2 habitaciones, 4 adultos', note:'Tuban, Kuta · desayuno incluido · Genius', price:null, rating:'Reservado', booked:true, gallery:['uploads/pasted-1783928043788-0.png','uploads/pasted-1783928063661-0.png','uploads/pasted-1783928076809-0.png'] },
+  { name:'HOKYY Accommodation', dates:'14 — 18 Sep · 4 noches, 4 adultos', note:'Ubud · a 0,8 km del centro · 9,6 Excepcional', price:null, rating:null, gallery:[] },
+  { name:'Alojamiento en Gili', dates:'18 — 21 Sep · 3 noches, 4 adultos', note:'Pendiente de reservar', price:null, rating:null, gallery:[] },
+  { name:'Hyde Boutique Hotel', dates:'21 — 24 Sep · 3 noches, 2 habitaciones, 4 adultos', note:'Jl. Raya Kuta No.5, Kuta Lombok · Suite con vistas a la piscina · Genius -22%', price:null, rating:'Reservado', booked:true, gallery:['uploads/lombok-hyde-1.png','uploads/lombok-hyde-2.png','uploads/lombok-hyde-3.png','uploads/lombok-hyde-4.png','uploads/lombok-hyde-5.png','uploads/lombok-hyde-6.png'] },
+  { name:'Alojamiento en Uluwatu', dates:'24 — 25 Sep · 1 noche, 4 adultos', note:'Pendiente de reservar', price:null, rating:null, gallery:[] }
+];
+
+const CHECKLIST_GROUPS = [
+  { name:'Documentación', items:[
+    { id:'c1', icon:'file-text', label:'Pasaporte (vigencia 6 meses)' },
+    { id:'c2', icon:'ticket', label:'Billetes de vuelo y reservas' },
+    { id:'c3', icon:'shield-check', label:'Seguro de viaje' } ] },
+  { name:'Ropa y templos', items:[
+    { id:'c4', icon:'shirt', label:'Ropa ligera y transpirable' },
+    { id:'c5', icon:'square-dot', label:'Sarong / pareo para templos' },
+    { id:'c6', icon:'footprints', label:'Calzado de agua para cascadas' } ] },
+  { name:'Salud y playa', items:[
+    { id:'c7', icon:'droplets', label:'Repelente de mosquitos' },
+    { id:'c8', icon:'sun', label:'Protector solar' },
+    { id:'c9', icon:'pill', label:'Botiquín básico' } ] },
+  { name:'Tecnología', items:[
+    { id:'c10', icon:'camera', label:'Cámara / batería extra' },
+    { id:'c11', icon:'plug', label:'Adaptador de enchufe' },
+    { id:'c12', icon:'wallet', label:'Efectivo en rupias (IDR)' } ] }
+];
+
+const BUDGET_CATEGORY_OPTIONS = [
+  { id:'vuelos', name:'Vuelos', icon:'plane' },
+  { id:'alojamiento', name:'Alojamiento', icon:'bed' },
+  { id:'excursiones', name:'Excursiones', icon:'compass' },
+  { id:'comida', name:'Comida', icon:'utensils' },
+  { id:'transporte', name:'Transporte', icon:'car' },
+  { id:'otros', name:'Otros', icon:'shopping-bag' }
+];
+
+const BASE_BUDGET_ITEMS = [
+  { id:'b1', label:'Vuelos BCN ⟷ DPS (4 pax x 860€)', amount:3440, category:'vuelos', removable:false },
+  { id:'b2', label:'Grandmas Plus Hotel Airport (1 noche)', amount:0, category:'alojamiento', removable:true },
+  { id:'b3', label:'Tour Benang Stokel & Kelambu, Cultura y Playa (4 pax x ~43€)', amount:172, category:'excursiones', removable:true },
+  { id:'b4', label:'Tour Gili Nanggu, Sudak & Kedis + GoPro (4 pax, con traslado)', amount:161, category:'excursiones', removable:true }
+];
+
+// ID de "sala" compartida en Firebase Realtime Database. Todos los que abran
+// este mismo enlace leen y escriben bajo la misma ruta trips/<TRIP_ID>, por
+// eso la checklist y el presupuesto se ven y actualizan igual para todos.
+const TRIP_ID = () => (window.TRIP_ID || 'bali-gili-lombok-2026');
+const TRIP_PATH = () => 'trips/' + TRIP_ID();
+
+class Component extends DCLogic {
+  state = {
+    selectedDayId: 'd2',
+    selectedDest: 'ubud',
+    checklist: this.loadChecklist(),
+    budgetItems: this.loadBudget(),
+    newExpenseLabel: '',
+    newExpenseAmount: '',
+    newExpenseCategory: 'otros',
+    countdown: { days:0, hours:0, mins:0, secs:0 },
+    lightbox: { open:false, dest:null, hotelIdx:null, photoIdx:0 },
+    synced: false
+  };
+
+  db = null;
+  checklistRef = null;
+  budgetRef = null;
+  _syncAttached = false;
+
+  openGallery(dest, hotelIdx, photoIdx) {
+    this.setState({ lightbox: { open:true, dest, hotelIdx, photoIdx: photoIdx || 0 } });
+  }
+  closeLightbox = () => this.setState({ lightbox: { open:false, dest:null, hotelIdx:null, photoIdx:0 } });
+  stopProp = (e) => e.stopPropagation();
+  prevPhoto = () => {
+    const { hotelIdx, photoIdx } = this.state.lightbox;
+    const gallery = HOTELS[hotelIdx].gallery;
+    this.setState({ lightbox: { ...this.state.lightbox, photoIdx: (photoIdx - 1 + gallery.length) % gallery.length } });
+  };
+  nextPhoto = () => {
+    const { hotelIdx, photoIdx } = this.state.lightbox;
+    const gallery = HOTELS[hotelIdx].gallery;
+    this.setState({ lightbox: { ...this.state.lightbox, photoIdx: (photoIdx + 1) % gallery.length } });
+  };
+
+  loadChecklist() {
+    try {
+      const raw = localStorage.getItem('bali-trip-checklist-v1');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    const init = {};
+    CHECKLIST_GROUPS.forEach(g => g.items.forEach(it => { init[it.id] = false; }));
+    return init;
+  }
+
+  loadBudget() {
+    try {
+      const raw = localStorage.getItem('bali-trip-budget-v1');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return BASE_BUDGET_ITEMS;
+  }
+
+  persistChecklist(next) {
+    try { localStorage.setItem('bali-trip-checklist-v1', JSON.stringify(next)); } catch (e) {}
+  }
+  persistBudget(next) {
+    try { localStorage.setItem('bali-trip-budget-v1', JSON.stringify(next)); } catch (e) {}
+  }
+
+  // Se llama en cada render (igual que refreshIcons): barato y evita depender
+  // de temporizadores para saber cuándo el SDK de Firebase ya está cargado.
+  trySync() {
+    if (this._syncAttached) return;
+    const cfg = window.FIREBASE_CONFIG;
+    if (!(window.firebase && window.firebase.database && cfg && cfg.apiKey)) return;
+    this._syncAttached = true;
+    try {
+      if (!window.firebase.apps.length) window.firebase.initializeApp(cfg);
+      this.db = window.firebase.database();
+      this.attachChecklistSync();
+      this.attachBudgetSync();
+      this.setState({ synced: true });
+    } catch (e) {
+      console.warn('[bali-trip] Firebase no disponible, modo solo local:', e);
+      this._syncAttached = false;
+    }
+  }
+
+  attachChecklistSync() {
+    const ref = this.db.ref(TRIP_PATH() + '/checklist');
+    ref.once('value').then(snap => {
+      if (!snap.exists()) ref.set(this.state.checklist);
+    }).catch(() => {});
+    ref.on('value', snap => {
+      const val = snap.val();
+      if (val) {
+        this.persistChecklist(val);
+        this.setState({ checklist: val });
+      }
+    });
+    this.checklistRef = ref;
+  }
+
+  attachBudgetSync() {
+    const ref = this.db.ref(TRIP_PATH() + '/budgetItems');
+    ref.once('value').then(snap => {
+      if (!snap.exists()) {
+        const seed = {};
+        this.state.budgetItems.forEach(it => { seed[it.id] = it; });
+        ref.set(seed);
+      }
+    }).catch(() => {});
+    ref.on('value', snap => {
+      const val = snap.val();
+      if (val) {
+        const list = Object.keys(val).map(id => ({ ...val[id], id }));
+        this.persistBudget(list);
+        this.setState({ budgetItems: list });
+      }
+    });
+    this.budgetRef = ref;
+  }
+
+  componentDidMount() {
+    this.refreshIcons();
+    this.tickCountdown();
+    this._countdownTimer = setInterval(this.tickCountdown, 1000);
+    this.trySync();
+  }
+  componentWillUnmount() {
+    if (this._countdownTimer) clearInterval(this._countdownTimer);
+    if (this.checklistRef) this.checklistRef.off();
+    if (this.budgetRef) this.budgetRef.off();
+  }
+  tickCountdown = () => {
+    const target = new Date('2026-09-12T22:30:00+02:00').getTime();
+    const now = Date.now();
+    let diff = Math.max(0, target - now);
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    this.setState({ countdown: { days, hours, mins, secs } });
+  };
+  componentDidUpdate() {
+    this.refreshIcons();
+    this.trySync();
+  }
+  refreshIcons() {
+    if (window.lucide && window.lucide.createIcons) {
+      requestAnimationFrame(() => window.lucide.createIcons());
+    }
+  }
+
+  fmtEUR(n) {
+    return (Math.round(n * 100) / 100).toLocaleString('es-ES', { minimumFractionDigits:0, maximumFractionDigits:2 }) + ' €';
+  }
+
+  addExpense = () => {
+    const amt = parseFloat(String(this.state.newExpenseAmount).replace(',', '.'));
+    if (!this.state.newExpenseLabel.trim() || isNaN(amt)) return;
+    const item = { id:'u' + Date.now(), label:this.state.newExpenseLabel.trim(), amount:amt, category:this.state.newExpenseCategory, removable:true };
+    const next = [...this.state.budgetItems, item];
+    this.persistBudget(next);
+    this.setState({ budgetItems: next, newExpenseLabel:'', newExpenseAmount:'' });
+    if (this.budgetRef) this.budgetRef.child(item.id).set(item);
+  };
+
+  removeExpense(id) {
+    const next = this.state.budgetItems.filter(i => i.id !== id);
+    this.persistBudget(next);
+    this.setState({ budgetItems: next });
+    if (this.budgetRef) this.budgetRef.child(id).remove();
+  }
+
+  toggleChecklistItem(id) {
+    const next = { ...this.state.checklist, [id]: !this.state.checklist[id] };
+    this.persistChecklist(next);
+    this.setState({ checklist: next });
+    if (this.checklistRef) this.checklistRef.child(id).set(next[id]);
+  }
+
+  renderVals() {
+    const travelers = [{ initial:'V' }, { initial:'M' }, { initial:'E' }, { initial:'M' }];
+    const cd = this.state.countdown;
+    const pad = n => String(n).padStart(2,'0');
+    const countdownUnits = [
+      { value: pad(cd.days), label: cd.days === 1 ? 'Día' : 'Días' },
+      { value: pad(cd.hours), label: 'Horas' },
+      { value: pad(cd.mins), label: 'Min' },
+      { value: pad(cd.secs), label: 'Seg' }
+    ];
+
+    const days = DAYS.map(d => {
+      const active = d.id === this.state.selectedDayId;
+      return {
+        ...d,
+        select: () => this.setState({ selectedDayId: d.id }),
+        pillStyle: `flex-shrink:0; text-align:left; cursor:pointer; padding:14px 18px; border-radius:14px; border:1px solid ${active ? 'rgba(56,189,248,0.5)' : 'rgba(248,244,232,0.12)'}; background:${active ? 'linear-gradient(135deg, rgba(15,118,110,0.35), rgba(56,189,248,0.15))' : 'rgba(248,244,232,0.03)'}; color:#F8F4E8; font-family:Manrope,sans-serif;`
+      };
+    });
+    const selectedDayRaw = DAYS.find(d => d.id === this.state.selectedDayId) || DAYS[0];
+    const selectedDay = selectedDayRaw;
+
+    const flights = FLIGHTS;
+    const legs = LEGS;
+
+    const activeHotels = HOTELS.map((h, idx) => {
+      const hasPhoto = h.gallery && h.gallery.length > 0;
+      const badgeText = h.booked ? '✓ Reservado' : (h.rating ? '★ ' + h.rating : 'Pendiente');
+      const badgeStyle = h.booked
+        ? 'font-size:11px; background:rgba(15,118,110,0.25); color:#34d399; padding:4px 8px; border-radius:8px; white-space:nowrap; font-weight:700;'
+        : 'font-size:11px; background:rgba(248,244,232,0.1); color:rgba(248,244,232,0.6); padding:4px 8px; border-radius:8px; white-space:nowrap;';
+      const collagePhotos = hasPhoto ? h.gallery.slice(1, 4) : [];
+      return {
+        ...h,
+        badgeText, badgeStyle,
+        hasPhoto, noPhoto: !hasPhoto,
+        cover: hasPhoto ? h.gallery[0] : null,
+        photoCount: hasPhoto ? h.gallery.length : 0,
+        mainCursor: hasPhoto ? 'pointer' : 'default',
+        hasCollage: collagePhotos.length > 0,
+        collage: collagePhotos.map((src, i) => ({ src, open: () => this.openGallery('all', idx, i + 1) })),
+        openGallery: hasPhoto ? () => this.openGallery('all', idx) : undefined
+      };
+    });
+
+    const lb = this.state.lightbox;
+    let lightbox = { open:false };
+    if (lb.open && lb.dest != null && lb.hotelIdx != null) {
+      const hotel = HOTELS[lb.hotelIdx];
+      const gallery = hotel.gallery || [];
+      lightbox = {
+        open:true, name:hotel.name,
+        photo: gallery[lb.photoIdx],
+        counter: gallery.length > 1 ? `${lb.photoIdx + 1} / ${gallery.length}` : ''
+      };
+    }
+
+    let doneCount = 0, totalCount = 0;
+    const checklistGroups = CHECKLIST_GROUPS.map(g => ({
+      name: g.name,
+      items: g.items.map(it => {
+        const checked = !!this.state.checklist[it.id];
+        totalCount++; if (checked) doneCount++;
+        return {
+          ...it, checked,
+          toggle: () => this.toggleChecklistItem(it.id),
+          rowStyle: `display:flex; align-items:center; gap:12px; padding:10px 8px; border-radius:10px; cursor:pointer;`,
+          boxStyle: `width:20px; height:20px; border-radius:6px; border:1.5px solid ${checked ? '#0F766E' : 'rgba(248,244,232,0.3)'}; background:${checked ? '#0F766E' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;`,
+          textStyle: `font-size:14.5px; color:${checked ? 'rgba(248,244,232,0.45)' : 'rgba(248,244,232,0.85)'}; text-decoration:${checked ? 'line-through' : 'none'};`
+        };
+      })
+    }));
+
+    const categorized = BUDGET_CATEGORY_OPTIONS.map(cat => {
+      const items = this.state.budgetItems.filter(i => i.category === cat.id).map(i => ({
+        ...i,
+        amountFmt: this.fmtEUR(i.amount),
+        remove: () => this.removeExpense(i.id)
+      }));
+      const total = items.reduce((s, i) => s + i.amount, 0);
+      return { ...cat, items, total, totalFmt: this.fmtEUR(total) };
+    }).filter(c => c.items.length > 0);
+
+    const budgetTotal = this.state.budgetItems.reduce((s, i) => s + i.amount, 0);
+
+    const syncStatus = this.state.synced
+      ? { icon:'refresh-cw', color:'#34d399', label:'Sincronizado con la familia' }
+      : { icon:'laptop', color:'rgba(248,244,232,0.4)', label:'Solo en este dispositivo' };
+
+    return {
+      travelers, countdownUnits, days, selectedDay, flights, legs,
+      activeHotels, lightbox,
+      closeLightbox: this.closeLightbox, stopProp: this.stopProp,
+      prevPhoto: this.prevPhoto, nextPhoto: this.nextPhoto,
+      checklistGroups,
+      checklistDone: doneCount, checklistTotal: totalCount,
+      checklistBarStyle: `height:100%; width:${totalCount ? (doneCount/totalCount*100) : 0}%; background:#0F766E; border-radius:4px; transition:width .3s ease;`,
+      budgetCategories: categorized,
+      budgetCategoryOptions: BUDGET_CATEGORY_OPTIONS,
+      budgetTotalFmt: this.fmtEUR(budgetTotal),
+      budgetPerPersonFmt: this.fmtEUR(budgetTotal / 4),
+      newExpenseLabel: this.state.newExpenseLabel,
+      newExpenseAmount: this.state.newExpenseAmount,
+      newExpenseCategory: this.state.newExpenseCategory,
+      onLabelChange: (e) => this.setState({ newExpenseLabel: e.target.value }),
+      onAmountChange: (e) => this.setState({ newExpenseAmount: e.target.value }),
+      onCategoryChange: (e) => this.setState({ newExpenseCategory: e.target.value }),
+      addExpense: this.addExpense,
+      syncStatus
+    };
+  }
+}
+
+</script>
+</body>
+</html>
