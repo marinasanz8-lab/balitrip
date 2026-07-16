@@ -30,7 +30,7 @@
 window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyCs2l5bVN11v9ZWh6UzswpXbYFePvi34Tk",
   authDomain: "balitrip-fa283.firebaseapp.com",
-  databaseURL: "", // pendiente: se rellena al activar Realtime Database (ver paso 3)
+  databaseURL: "https://balitrip-fa283-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "balitrip-fa283",
   storageBucket: "balitrip-fa283.firebasestorage.app",
   messagingSenderId: "596704615050",
