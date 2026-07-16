@@ -1,25 +1,53 @@
-# Bali · Sep 2026
+# Mis viajes
 
-Microsite del viaje: cuenta atrás, conversor de divisas, checklist de
-preparativos, vuelos, hoteles, itinerario día a día y presupuesto
-compartido. Cada persona ve su propia copia guardada en el navegador
-(`localStorage`); el botón **Compartir** genera un enlace con el estado
-completo codificado, para mandar la última versión al resto del grupo.
+Plataforma para planificar todos tus viajes, no solo uno: una pantalla
+**Mis viajes** para crearlos e ir guardándolos, y dentro de cada uno,
+módulos configurables (activa o desactiva los que no necesites):
+
+- Cuenta atrás
+- Conversor de divisas (moneda local del viaje ↔ EUR)
+- Checklist de preparativos — manual o generada con IA a partir del destino
+- Vuelos — manual o importando los datos desde una captura de pantalla con IA
+- Hoteles, con foto y enlace de reserva
+- Itinerario día a día por zonas/etapas
+- Presupuesto compartido
+
+Cada viaje tiene su portada (foto propia o icono+color), fechas, destino y
+moneda. El botón **Compartir** genera un enlace con el estado completo de
+ese viaje codificado, para mandar la última versión a otra persona.
 
 ## Publicar la web (GitHub Pages)
 
-El sitio ya está compilado en la raíz del repo (`index.html` + `assets/`),
-así que no hace falta build ni servidor:
+El sitio ya está compilado en la raíz del repo (`index.html` + `assets/` +
+`firebase-config.js`), así que no hace falta build ni servidor:
 
 1. En el repositorio de GitHub: **Settings → Pages → Deploy from a
-   branch**, elige la rama `main` y la carpeta raíz (`/`).
-2. Al cabo de un minuto la web queda disponible en
-   `https://<usuario>.github.io/balitrip/` — ese es el enlace que
-   compartes con la familia.
+   branch**, elige esta rama y la carpeta raíz (`/`).
+2. Al cabo de un minuto la web queda disponible en tu dominio de GitHub
+   Pages — ese es el enlace que compartes con la familia.
+
+## Sincronización entre dispositivos (Firebase)
+
+Por defecto la lista de viajes y sus datos se guardan en cada navegador
+(`localStorage`). Para que se sincronicen en tiempo real entre todos los
+dispositivos que abran el enlace, rellena `app/public/firebase-config.js`
+— ya trae comentadas las instrucciones paso a paso (crear proyecto
+gratuito en Firebase, activar Realtime Database, pegar las reglas). Sin
+este paso la web sigue funcionando con normalidad, solo que cada persona
+ve su propia copia hasta que usa **Compartir**.
+
+## IA (captura de vuelos y checklist)
+
+Los botones con ✨ ("Importar de captura", "Generar con IA") llaman
+directamente desde tu navegador a la API de Anthropic. Necesitan tu propia
+clave de API, que se pega una vez en **Ajustes del viaje → Clave de API**
+y se guarda solo en ese navegador (nunca se sincroniza ni sale de tu
+dispositivo salvo hacia Anthropic). Sin clave configurada, esos botones
+simplemente avisan y el resto de la web funciona igual.
 
 ## Editar el diseño
 
-El código fuente (React + TypeScript + Tailwind) vive en `app/`.
+El código fuente (React + TypeScript + Tailwind v4) vive en `app/`.
 
 ```bash
 cd app
@@ -36,12 +64,25 @@ cp -r dist/. ..
 ```
 
 Luego haz commit de los archivos cambiados en la raíz (`index.html`,
-`assets/`) junto con tus cambios en `app/src/`, y haz push a `main`.
+`assets/`) junto con tus cambios en `app/src/`, y haz push.
 
 ## Estructura
 
-- `index.html`, `assets/` — la web compilada, lo que sirve GitHub Pages.
+- `index.html`, `assets/`, `firebase-config.js` — la web compilada, lo
+  que sirve GitHub Pages.
 - `app/` — código fuente editable (Vite + React + Tailwind v4).
-  - `app/src/app/App.tsx` — toda la lógica y el diseño de la app.
-  - `app/src/imports/` — fotos (hero de Ubud, hoteles).
+  - `app/src/app/App.tsx` — enrutado entre "Mis viajes", un viaje y sus
+    ajustes.
+  - `app/src/app/TripsHome.tsx` — lista de viajes y alta de uno nuevo.
+  - `app/src/app/TripView.tsx` — la página de un viaje (hero + módulos).
+  - `app/src/app/TripSettings.tsx` — portada, datos del viaje, módulos
+    activos, clave de IA, borrar viaje.
+  - `app/src/app/modules/` — cada sección (Checklist, Vuelos, Hoteles,
+    Itinerario, Presupuesto, Conversor) como componente independiente.
+  - `app/src/app/lib/firebase.ts` / `workspace.tsx` — sincronización y
+    estado compartido entre viajes.
+  - `app/src/app/lib/ai.ts` — llamadas a la API de Anthropic desde el
+    navegador.
+  - `app/src/app/types.ts` — modelo de datos (viaje, módulos, vuelos,
+    hoteles...).
   - `app/src/styles/theme.css` — paleta de colores y tipografías.
