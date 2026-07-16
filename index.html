@@ -237,7 +237,7 @@
             <div style="display:flex; flex-direction:column; gap:2px;">
               <sc-for list="{{ group.items }}" as="item" hint-placeholder-count="4">
                 <div onclick="{{ item.toggle }}" style="{{ item.rowStyle }}">
-                  <div style="{{ item.boxStyle }}"><sc-if value="{{ item.checked }}"><i data-lucide="check" style="width:13px;height:13px;color:#08111F;"></i></sc-if></div>
+                  <div style="{{ item.boxStyle }}"><i data-lucide="check" style="width:13px;height:13px;color:#08111F;{{ item.checkIconStyle }}"></i></div>
                   <i data-lucide="{{ item.icon }}" style="width:17px;height:17px; color:rgba(248,244,232,0.5); flex-shrink:0;"></i>
                   <div style="{{ item.textStyle }}">{{ item.label }}</div>
                 </div>
@@ -705,7 +705,13 @@ class Component extends DCLogic {
           toggle: () => this.toggleChecklistItem(it.id),
           rowStyle: `display:flex; align-items:center; gap:12px; padding:10px 8px; border-radius:10px; cursor:pointer;`,
           boxStyle: `width:20px; height:20px; border-radius:6px; border:1.5px solid ${checked ? '#0F766E' : 'rgba(248,244,232,0.3)'}; background:${checked ? '#0F766E' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;`,
-          textStyle: `font-size:14.5px; color:${checked ? 'rgba(248,244,232,0.45)' : 'rgba(248,244,232,0.85)'}; text-decoration:${checked ? 'line-through' : 'none'};`
+          textStyle: `font-size:14.5px; color:${checked ? 'rgba(248,244,232,0.45)' : 'rgba(248,244,232,0.85)'}; text-decoration:${checked ? 'line-through' : 'none'};`,
+          // El icono del check se queda siempre montado y solo se oculta con
+          // CSS (en vez de con sc-if) para que React nunca tenga que montar/
+          // desmontar el nodo que lucide.createIcons() sustituye por un
+          // <svg> por su cuenta — si no, al desmontar ese nodo React choca
+          // con el DOM que lucide ya modificó y salta "NotFoundError".
+          checkIconStyle: checked ? '' : 'display:none;'
         };
       })
     }));
