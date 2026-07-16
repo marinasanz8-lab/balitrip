@@ -28,13 +28,13 @@
 //      protección de esta base de datos al no haber usuarios ni contraseña.
 
 window.FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  databaseURL: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyCs2l5bVN11v9ZWh6UzswpXbYFePvi34Tk",
+  authDomain: "balitrip-fa283.firebaseapp.com",
+  databaseURL: "", // pendiente: se rellena al activar Realtime Database (ver paso 3)
+  projectId: "balitrip-fa283",
+  storageBucket: "balitrip-fa283.firebasestorage.app",
+  messagingSenderId: "596704615050",
+  appId: "1:596704615050:web:515f3c1430bb55d8b16b73"
 };
 
-window.TRIP_ID = "bali-gili-lombok-2026";
+window.TRIP_ID = "bali-gili-lombok-2026-mvem4";
