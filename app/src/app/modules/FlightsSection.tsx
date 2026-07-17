@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
-import { Edit2, Plane, Plus, Save, Sparkles, Trash2 } from "lucide-react";
+import { ClipboardPaste, Edit2, Plane, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 import { SectionHeader } from "./shared";
 import { extractFlightFromImage } from "../lib/ai";
+import { parseFlightText } from "../lib/parseFlightText";
 import type { FlightData } from "../types";
 
 const EMPTY_FLIGHT: FlightData = {
@@ -23,6 +24,9 @@ export function FlightsSection({ flights, setFlights }: { flights: FlightData[];
   const [aiIdx, setAiIdx] = useState<number | null>(null);
   const [aiError, setAiError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const [pasteError, setPasteError] = useState("");
 
   const startEdit = (i: number) => { setEditIdx(i); setDraft({ ...flights[i] }); };
   const save = () => {
@@ -61,6 +65,18 @@ export function FlightsSection({ flights, setFlights }: { flights: FlightData[];
     } finally {
       setAiIdx(null);
     }
+  };
+
+  const extractFromText = () => {
+    setPasteError("");
+    const extracted = parseFlightText(pasteText);
+    if (extracted.length === 0) {
+      setPasteError("No se ha reconocido ningún vuelo en ese texto. Revisa el formato (fecha, horas y aeropuertos con código de 3 letras) o añádelo a mano.");
+      return;
+    }
+    setFlights((fs) => [...fs, ...extracted]);
+    setPasteText("");
+    setPasteOpen(false);
   };
 
   return (
@@ -137,12 +153,45 @@ export function FlightsSection({ flights, setFlights }: { flights: FlightData[];
         </div>
       )}
 
-      <button
-        onClick={addFlight}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
-      >
-        <Plus size={15} /> Añadir vuelo
-      </button>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button
+          onClick={addFlight}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+        >
+          <Plus size={15} /> Añadir vuelo
+        </button>
+        <button
+          onClick={() => { setPasteOpen((v) => !v); setPasteError(""); }}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+        >
+          <ClipboardPaste size={15} /> Pegar texto de la reserva
+        </button>
+      </div>
+
+      {pasteOpen && (
+        <div className="mt-3 bg-card border border-border rounded-2xl p-4">
+          <p className="text-xs text-muted-foreground mb-2">
+            Pega el párrafo con los datos del vuelo (fecha, horas, aeropuertos con código de 3 letras y duración por
+            trayecto) y se rellenará solo — sin IA, gratis.
+          </p>
+          <textarea
+            className="w-full text-sm bg-muted rounded-xl px-3 py-2.5 outline-none placeholder:text-muted-foreground resize-y"
+            rows={6}
+            placeholder={"Ida — 12 sep 2026\nBarcelona (BCN) 22:30 → Denpasar Bali (DPS) 23:30 (+1)\nDuración: 19h, 1 escala"}
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+          />
+          {pasteError && <p className="text-xs text-destructive mt-2">{pasteError}</p>}
+          <div className="flex gap-2 mt-3">
+            <button onClick={extractFromText} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium">
+              Extraer vuelos
+            </button>
+            <button onClick={() => { setPasteOpen(false); setPasteText(""); setPasteError(""); }} className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
