@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { getWorkspaceId, isSynced, useSyncedValue } from "./firebase";
-import { uid } from "./util";
 import { buildBaliSeed } from "./seed";
-import { DEFAULT_MODULES, EMPTY_TRIP_DATA, TRIP_COLORS, TRIP_EMOJIS, type TripData, type TripMeta } from "../types";
+import type { TripData, TripMeta } from "../types";
 
 const SEED_FLAG = "seeded-bali-v1";
 
@@ -16,7 +15,6 @@ type WorkspaceCtx = {
   ready: boolean;
   synced: boolean;
   getTripEntry: (id: string) => TripEntry | undefined;
-  createTrip: (partial: Pick<TripMeta, "name" | "destination" | "startDate" | "endDate">) => string;
   updateTripMeta: (id: string, partial: Partial<TripMeta>) => void;
   deleteTrip: (id: string) => void;
   setTripData: (id: string, updater: TripData | ((prev: TripData) => TripData)) => void;
@@ -57,23 +55,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       ready,
       synced: isSynced(),
       getTripEntry: (id) => ws.trips?.[id],
-      createTrip: (partial) => {
-        const id = uid();
-        const meta: TripMeta = {
-          id,
-          name: partial.name,
-          destination: partial.destination,
-          startDate: partial.startDate,
-          endDate: partial.endDate,
-          emoji: TRIP_EMOJIS[Math.floor(Math.random() * TRIP_EMOJIS.length)],
-          color: TRIP_COLORS[Math.floor(Math.random() * TRIP_COLORS.length)],
-          currency: "USD",
-          modules: DEFAULT_MODULES,
-          createdAt: Date.now(),
-        };
-        setWs((prev) => ({ trips: { ...prev.trips, [id]: { meta, data: EMPTY_TRIP_DATA } } }));
-        return id;
-      },
       updateTripMeta: (id, partial) => {
         setWs((prev) => {
           const entry = prev.trips[id];

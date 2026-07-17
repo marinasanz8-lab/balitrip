@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Camera, Compass, Plus, Trash2, X } from "lucide-react";
 import { SectionHeader } from "./shared";
-import { uid } from "../lib/util";
-import { ZONE_COLORS, TRIP_EMOJIS, type Zone } from "../types";
+import { fileToResizedDataUrl, uid } from "../lib/util";
+import { ZONE_COLORS, TRIP_EMOJIS, type Activity, type Tour, type Zone } from "../types";
 
-export function ItinerarySection({ zones, setZones }: { zones: Zone[]; setZones: (v: Zone[] | ((p: Zone[]) => Zone[])) => void }) {
+export function ItinerarySection({ zones, setZones, tours = [] }: { zones: Zone[]; setZones: (v: Zone[] | ((p: Zone[]) => Zone[])) => void; tours?: Tour[] }) {
   const [activeZone, setActiveZone] = useState(0);
   const [newActs, setNewActs] = useState<Record<string, string>>({});
   const [newDayLabel, setNewDayLabel] = useState("");
   const [newZoneName, setNewZoneName] = useState("");
   const tabsRef = useRef<HTMLDivElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const photoTargetDay = useRef<string | null>(null);
 
   useEffect(() => {
     if (activeZone >= zones.length) setActiveZone(Math.max(0, zones.length - 1));
@@ -18,6 +20,7 @@ export function ItinerarySection({ zones, setZones }: { zones: Zone[]; setZones:
   const zone = zones[activeZone];
   const color = ZONE_COLORS[activeZone % ZONE_COLORS.length];
   const days = zone?.days ?? [];
+  const allDayOptions = zones.flatMap((z) => z.days.map((d) => ({ id: d.id, label: `${z.emoji} ${z.name} · ${d.label}` })));
 
   const addAct = (did: string) => {
     const text = (newActs[did] || "").trim();
@@ -30,6 +33,23 @@ export function ItinerarySection({ zones, setZones }: { zones: Zone[]; setZones:
     setZones((zs) => zs.map((z, i) => (i === activeZone ? { ...z, days: z.days.map((d) => (d.id === did ? { ...d, activities: d.activities.filter((a) => a.id !== aid) } : d)) } : z)));
   };
 
+  const moveAct = (fromDayId: string, activityId: string, toDayId: string) => {
+    if (!toDayId || fromDayId === toDayId) return;
+    setZones((zs) => {
+      let moved: Activity | undefined;
+      const stripped = zs.map((z) => ({
+        ...z,
+        days: z.days.map((d) => {
+          if (d.id !== fromDayId) return d;
+          moved = d.activities.find((a) => a.id === activityId);
+          return { ...d, activities: d.activities.filter((a) => a.id !== activityId) };
+        }),
+      }));
+      if (!moved) return zs;
+      return stripped.map((z) => ({ ...z, days: z.days.map((d) => (d.id === toDayId ? { ...d, activities: [...d.activities, moved as Activity] } : d)) }));
+    });
+  };
+
   const addDay = () => {
     const label = newDayLabel.trim();
     if (!label) return;
@@ -39,6 +59,22 @@ export function ItinerarySection({ zones, setZones }: { zones: Zone[]; setZones:
 
   const delDay = (did: string) => {
     setZones((zs) => zs.map((z, i) => (i === activeZone ? { ...z, days: z.days.filter((d) => d.id !== did) } : z)));
+  };
+
+  const triggerPhoto = (dayId: string) => {
+    photoTargetDay.current = dayId;
+    photoInputRef.current?.click();
+  };
+
+  const onPhotoChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    const dayId = photoTargetDay.current;
+    if (!file || !dayId) return;
+    try {
+      const dataUrl = await fileToResizedDataUrl(file, 1000, 0.72);
+      setZones((zs) => zs.map((z) => ({ ...z, days: z.days.map((d) => (d.id === dayId ? { ...d, photo: dataUrl } : d)) })));
+    } catch { /* ignore */ }
   };
 
   const addZone = () => {
@@ -66,6 +102,7 @@ export function ItinerarySection({ zones, setZones }: { zones: Zone[]; setZones:
       <div className="px-4 max-w-4xl mx-auto">
         <SectionHeader eyebrow="Día a día" title="Itinerario" />
       </div>
+      <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={onPhotoChosen} />
 
       {zones.length === 0 ? (
         <div className="px-4 max-w-4xl mx-auto">
@@ -103,20 +140,55 @@ export function ItinerarySection({ zones, setZones }: { zones: Zone[]; setZones:
             <div className="px-4 max-w-4xl mx-auto mt-6 space-y-4">
               {days.map((day) => (
                 <div key={day.id} className="bg-card border border-border rounded-2xl overflow-hidden">
-                  <div className="px-4 py-2.5 flex items-center gap-2 group" style={{ backgroundColor: color + "18", borderBottom: `1px solid ${color}30` }}>
-                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] flex-1" style={{ color }}>{day.label}</span>
-                    <button onClick={() => delDay(day.id)} className="opacity-0 group-hover:opacity-100 transition-all" style={{ color }}>
-                      <Trash2 size={12} />
-                    </button>
+                  <div className="relative group/head" style={{ borderBottom: `1px solid ${color}30` }}>
+                    {day.photo ? (
+                      <div className="relative h-28">
+                        <img src={day.photo} alt={day.label} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
+                        <div className="absolute inset-x-0 bottom-0 px-4 py-2.5 flex items-center gap-2">
+                          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-white flex-1">{day.label}</span>
+                          <button onClick={() => triggerPhoto(day.id)} className="text-white/80 hover:text-white transition-colors"><Camera size={13} /></button>
+                          <button onClick={() => delDay(day.id)} className="text-white/80 hover:text-white transition-colors"><Trash2 size={13} /></button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="px-4 py-2.5 flex items-center gap-2" style={{ backgroundColor: color + "18" }}>
+                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                        <span className="text-xs font-semibold uppercase tracking-[0.12em] flex-1" style={{ color }}>{day.label}</span>
+                        <button onClick={() => triggerPhoto(day.id)} className="opacity-0 group-hover/head:opacity-100 transition-all" style={{ color }}><Camera size={12} /></button>
+                        <button onClick={() => delDay(day.id)} className="opacity-0 group-hover/head:opacity-100 transition-all" style={{ color }}><Trash2 size={12} /></button>
+                      </div>
+                    )}
                   </div>
                   <div className="p-4">
+                    {tours.filter((t) => t.dayId === day.id).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {tours.filter((t) => t.dayId === day.id).map((t) => (
+                          <span key={t.id} className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
+                            <Compass size={10} /> {t.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {day.activities.length > 0 ? (
                       <ul className="space-y-2 mb-3">
                         {day.activities.map((a) => (
                           <li key={a.id} className="flex items-start gap-2.5 group">
                             <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: color }} />
                             <span className="flex-1 text-sm leading-relaxed">{a.text}</span>
+                            {allDayOptions.length > 1 && (
+                              <select
+                                defaultValue=""
+                                title="Mover a otro día"
+                                onChange={(e) => { moveAct(day.id, a.id, e.target.value); e.currentTarget.value = ""; }}
+                                className="opacity-0 group-hover:opacity-100 transition-all text-[11px] bg-transparent text-muted-foreground hover:text-foreground outline-none cursor-pointer flex-shrink-0"
+                              >
+                                <option value="" disabled>→ mover</option>
+                                {allDayOptions.filter((o) => o.id !== day.id).map((o) => (
+                                  <option key={o.id} value={o.id}>{o.label}</option>
+                                ))}
+                              </select>
+                            )}
                             <button onClick={() => delAct(day.id, a.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all mt-0.5 flex-shrink-0">
                               <X size={12} />
                             </button>

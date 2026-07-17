@@ -1,4 +1,47 @@
 import { useEffect, useState } from "react";
+import { UserPlus, X } from "lucide-react";
+import { uid } from "../lib/util";
+import type { Person } from "../types";
+
+export function PeopleEditor({ people, setPeople }: { people: Person[]; setPeople: (v: Person[] | ((p: Person[]) => Person[])) => void }) {
+  const [name, setName] = useState("");
+  const add = () => {
+    const n = name.trim();
+    if (!n) return;
+    setPeople((ps) => [...ps, { id: uid(), name: n }]);
+    setName("");
+  };
+  const del = (id: string) => setPeople((ps) => ps.filter((p) => p.id !== id));
+
+  return (
+    <div>
+      {people.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {people.map((p) => (
+            <span key={p.id} className="inline-flex items-center gap-1 text-xs font-medium pl-2.5 pr-1.5 py-1 rounded-full bg-muted">
+              {p.name}
+              <button onClick={() => del(p.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-2">
+        <input
+          className="flex-1 text-sm bg-muted rounded-xl px-3 py-2 outline-none placeholder:text-muted-foreground"
+          placeholder="Nombre (ej. Marina)"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+        />
+        <button onClick={add} className="px-3 py-2 bg-muted text-foreground rounded-xl hover:bg-muted/70 transition-colors flex-shrink-0">
+          <UserPlus size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function SectionHeader({ eyebrow, title, action }: { eyebrow: string; title: string; action?: React.ReactNode }) {
   return (

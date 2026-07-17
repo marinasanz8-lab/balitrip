@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Link, Settings } from "lucide-react";
 import { useWorkspace } from "./lib/workspace";
-import { copyToClipboard, encodeShare } from "./lib/util";
+import { copyToClipboard, encodeShare, fieldSetter } from "./lib/util";
 import { Countdown, Divider } from "./modules/shared";
 import { CurrencyConverter } from "./modules/CurrencyConverter";
 import { ChecklistSection } from "./modules/ChecklistSection";
 import { FlightsSection } from "./modules/FlightsSection";
 import { HotelsSection } from "./modules/HotelsSection";
 import { ItinerarySection } from "./modules/ItinerarySection";
+import { TourSection } from "./modules/TourSection";
 import { BudgetSection } from "./modules/BudgetSection";
 import { MODULE_LABELS, type ModuleId, type TripData, type TripMeta } from "./types";
 
@@ -156,18 +157,22 @@ function renderModule(
     case "conversor":
       return <CurrencyConverter currency={meta.currency} />;
     case "checklist":
-      return <ChecklistSection cats={data.checklist} setCats={(v) => update((p) => ({ ...p, checklist: typeof v === "function" ? (v as (x: typeof p.checklist) => typeof p.checklist)(p.checklist) : v }))} trip={meta} />;
+      return <ChecklistSection cats={data.checklist} setCats={fieldSetter(update, "checklist")} trip={meta} />;
     case "vuelos":
-      return <FlightsSection flights={data.flights} setFlights={(v) => update((p) => ({ ...p, flights: typeof v === "function" ? (v as (x: typeof p.flights) => typeof p.flights)(p.flights) : v }))} />;
+      return <FlightsSection flights={data.flights} setFlights={fieldSetter(update, "flights")} />;
     case "hoteles":
-      return <HotelsSection hotels={data.hotels} setHotels={(v) => update((p) => ({ ...p, hotels: typeof v === "function" ? (v as (x: typeof p.hotels) => typeof p.hotels)(p.hotels) : v }))} />;
+      return <HotelsSection hotels={data.hotels} setHotels={fieldSetter(update, "hotels")} />;
     case "itinerario":
-      return <ItinerarySection zones={data.zones} setZones={(v) => update((p) => ({ ...p, zones: typeof v === "function" ? (v as (x: typeof p.zones) => typeof p.zones)(p.zones) : v }))} />;
+      return <ItinerarySection zones={data.zones} setZones={fieldSetter(update, "zones")} tours={data.tours} />;
+    case "tours":
+      return <TourSection tours={data.tours} setTours={fieldSetter(update, "tours")} zones={data.zones} />;
     case "presupuesto":
       return (
         <BudgetSection
           items={data.budget}
-          setItems={(v) => update((p) => ({ ...p, budget: typeof v === "function" ? (v as (x: typeof p.budget) => typeof p.budget)(p.budget) : v }))}
+          setItems={fieldSetter(update, "budget")}
+          people={data.people}
+          setPeople={fieldSetter(update, "people")}
           zones={data.zones}
           currency={meta.currency}
           onShare={onShare}

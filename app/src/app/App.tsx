@@ -4,16 +4,19 @@ import { decodeShare } from "./lib/util";
 import { TripsHome } from "./TripsHome";
 import { TripView } from "./TripView";
 import { TripSettings } from "./TripSettings";
+import { TripWizard } from "./wizard/TripWizard";
 import type { TripData, TripMeta } from "./types";
 
 type Route =
   | { name: "home" }
+  | { name: "new" }
   | { name: "trip"; id: string }
   | { name: "settings"; id: string };
 
 function parseHash(hash: string): Route {
   const clean = hash.replace(/^#\/?/, "");
   const parts = clean.split("/").filter(Boolean);
+  if (parts[0] === "nuevo") return { name: "new" };
   if (parts[0] === "trip" && parts[1]) {
     if (parts[2] === "ajustes") return { name: "settings", id: parts[1] };
     return { name: "trip", id: parts[1] };
@@ -53,6 +56,9 @@ function Router() {
 
   useEffect(() => { window.scrollTo(0, 0); }, [route]);
 
+  if (route.name === "new") {
+    return <TripWizard onDone={(id) => navigate(`/trip/${id}`)} onCancel={() => navigate("/")} />;
+  }
   if (route.name === "trip") {
     return <TripView tripId={route.id} onBack={() => navigate("/")} onSettings={() => navigate(`/trip/${route.id}/ajustes`)} />;
   }
@@ -68,7 +74,7 @@ function Router() {
     }
     return <TripSettings trip={trip} onBack={() => navigate(`/trip/${route.id}`)} onDeleted={() => navigate("/")} />;
   }
-  return <TripsHome onOpenTrip={(id) => navigate(`/trip/${id}`)} />;
+  return <TripsHome onOpenTrip={(id) => navigate(`/trip/${id}`)} onNewTrip={() => navigate("/nuevo")} />;
 }
 
 export default function App() {

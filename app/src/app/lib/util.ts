@@ -1,5 +1,13 @@
 export const uid = () => Math.random().toString(36).slice(2, 9);
 
+/** Adapts a whole-object updater into a setter for one of its fields, so a
+ * field can be handed to a child component as if it owned its own state
+ * (accepts either a value or a `(prev) => next` updater function). */
+export function fieldSetter<T, K extends keyof T>(update: (updater: T | ((p: T) => T)) => void, key: K) {
+  return (v: T[K] | ((p: T[K]) => T[K])) =>
+    update((p) => ({ ...p, [key]: typeof v === "function" ? (v as (x: T[K]) => T[K])(p[key]) : v }));
+}
+
 export const copyToClipboard = (text: string): Promise<void> => {
   if (navigator.clipboard?.writeText) {
     return navigator.clipboard.writeText(text);
@@ -59,6 +67,23 @@ export function fileToResizedDataUrl(file: File, maxW = 1000, quality = 0.75): P
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("no se pudo leer la imagen")); };
     img.src = url;
   });
+}
+
+/** Whole days (inclusive) between two ISO dates, e.g. 12→14 Sep is 3 days. */
+export function tripLengthDays(startISO: string, endISO: string): number {
+  if (!startISO || !endISO) return 0;
+  const start = new Date(startISO + "T00:00:00").getTime();
+  const end = new Date(endISO + "T00:00:00").getTime();
+  return Math.max(0, Math.round((end - start) / 86400000) + 1);
+}
+
+/** Formats the Nth day (0-indexed) after an ISO start date, e.g. "Lun 14 sept". */
+export function dayLabelAt(startISO: string, offset: number): { iso: string; label: string } {
+  const d = new Date(startISO + "T00:00:00");
+  d.setDate(d.getDate() + offset);
+  const iso = d.toISOString().slice(0, 10);
+  const raw = d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
+  return { iso, label: raw.charAt(0).toUpperCase() + raw.slice(1) };
 }
 
 export function fileToBase64(file: File): Promise<{ data: string; mediaType: string }> {

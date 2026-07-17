@@ -1,5 +1,5 @@
 import { uid } from "./util";
-import type { CheckCat, FlightData, HotelData, TripData, TripMeta, Zone } from "../types";
+import { DEFAULT_MODULES, type CheckCat, type FlightData, type HotelData, type TripData, type TripMeta, type Zone } from "../types";
 
 const DEF_CHECK: CheckCat[] = [
   { id: "docs", name: "Documentación", items: [
@@ -106,7 +106,7 @@ export function buildBaliSeed(): { meta: TripMeta; data: TripData } {
     emoji: "🏝️",
     color: "#B85525",
     currency: "IDR",
-    modules: ["conversor", "checklist", "vuelos", "hoteles", "itinerario", "presupuesto"],
+    modules: DEFAULT_MODULES,
     createdAt: Date.now(),
   };
   const data: TripData = {
@@ -114,7 +114,9 @@ export function buildBaliSeed(): { meta: TripMeta; data: TripData } {
     flights: readOld(OLD_KEYS.flights, DEF_FLIGHTS),
     hotels: readOld(OLD_KEYS.hotels, DEF_HOTELS),
     zones: readOld(OLD_KEYS.zones, DEF_ZONES),
+    tours: [],
     budget: readOld(OLD_KEYS.budget, DEF_BUDGET),
+    people: [],
   };
   return { meta, data };
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, MapPin, Plus, Trash2, X } from "lucide-react";
+import { CalendarDays, MapPin, Plus, Trash2 } from "lucide-react";
 import { useWorkspace } from "./lib/workspace";
 import type { TripMeta } from "./types";
 
@@ -18,6 +18,14 @@ function daysUntil(start: string): string | null {
   if (diff > 0) return `Faltan ${diff} días`;
   if (diff === 0) return "¡Es hoy!";
   return null;
+}
+
+function isPastTrip(trip: TripMeta): boolean {
+  const ref = trip.endDate || trip.startDate;
+  if (!ref) return false;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  return new Date(ref + "T00:00:00").getTime() < startOfToday.getTime();
 }
 
 function TripCard({ trip, onOpen, onDelete }: { trip: TripMeta; onOpen: () => void; onDelete: () => void }) {
@@ -49,94 +57,62 @@ function TripCard({ trip, onOpen, onDelete }: { trip: TripMeta; onOpen: () => vo
   );
 }
 
-function NewTripDialog({ onClose, onCreate }: { onClose: () => void; onCreate: (v: { name: string; destination: string; startDate: string; endDate: string }) => void }) {
-  const [name, setName] = useState("");
-  const [destination, setDestination] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-
-  const submit = () => {
-    if (!name.trim()) return;
-    onCreate({ name: name.trim(), destination: destination.trim(), startDate, endDate });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-      <div className="bg-card border border-border rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Nuevo viaje</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
-        </div>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Nombre del viaje</label>
-            <input autoFocus className="w-full text-sm bg-muted rounded-xl px-3 py-2.5 outline-none" placeholder="ej. Japón 2027" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Destino</label>
-            <input className="w-full text-sm bg-muted rounded-xl px-3 py-2.5 outline-none" placeholder="ej. Tokio y Kioto, Japón" value={destination} onChange={(e) => setDestination(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Salida</label>
-              <input type="date" className="w-full text-sm bg-muted rounded-xl px-3 py-2.5 outline-none" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Vuelta</label>
-              <input type="date" className="w-full text-sm bg-muted rounded-xl px-3 py-2.5 outline-none" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-            </div>
-          </div>
-        </div>
-        <button onClick={submit} disabled={!name.trim()} className="w-full mt-5 py-3 bg-primary text-primary-foreground rounded-2xl font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-40">
-          Crear viaje
-        </button>
-      </div>
-    </div>
-  );
-}
-
-export function TripsHome({ onOpenTrip }: { onOpenTrip: (id: string) => void }) {
-  const { trips, createTrip, deleteTrip, synced } = useWorkspace();
-  const [showNew, setShowNew] = useState(false);
+export function TripsHome({ onOpenTrip, onNewTrip }: { onOpenTrip: (id: string) => void; onNewTrip: () => void }) {
+  const { trips, deleteTrip, synced } = useWorkspace();
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [tab, setTab] = useState<"proximos" | "pasados">("proximos");
+
+  const upcoming = trips.filter((t) => !isPastTrip(t));
+  const past = trips.filter(isPastTrip).slice().reverse();
+  const shown = tab === "proximos" ? upcoming : past;
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 pt-14 pb-8">
         <p className="text-[10px] uppercase tracking-[0.25em] text-primary mb-2">{synced ? "Sincronizado" : "Solo en este dispositivo"}</p>
-        <div className="flex items-end justify-between gap-3 mb-10">
+        <div className="flex items-end justify-between gap-3 mb-6">
           <h1 className="text-4xl md:text-5xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Mis viajes</h1>
-          <button onClick={() => setShowNew(true)} className="flex items-center gap-1.5 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity flex-shrink-0">
+          <button onClick={onNewTrip} className="flex items-center gap-1.5 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity flex-shrink-0">
             <Plus size={16} /> Nuevo viaje
           </button>
         </div>
 
+        {trips.length > 0 && (
+          <div className="flex gap-2 mb-8">
+            <button
+              onClick={() => setTab("proximos")}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab === "proximos" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
+            >
+              Próximos {upcoming.length > 0 && `(${upcoming.length})`}
+            </button>
+            <button
+              onClick={() => setTab("pasados")}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab === "pasados" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
+            >
+              Pasados {past.length > 0 && `(${past.length})`}
+            </button>
+          </div>
+        )}
+
         {trips.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground bg-card border border-dashed border-border rounded-2xl">
             <p className="text-sm mb-4">Aún no has creado ningún viaje.</p>
-            <button onClick={() => setShowNew(true)} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity">
+            <button onClick={onNewTrip} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity">
               Crear el primero
             </button>
           </div>
+        ) : shown.length === 0 ? (
+          <div className="text-center py-20 text-muted-foreground bg-card border border-dashed border-border rounded-2xl">
+            <p className="text-sm">{tab === "proximos" ? "No tienes viajes próximos." : "Todavía no tienes viajes pasados."}</p>
+          </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {trips.map((trip) => (
+            {shown.map((trip) => (
               <TripCard key={trip.id} trip={trip} onOpen={() => onOpenTrip(trip.id)} onDelete={() => setConfirmDelete(trip.id)} />
             ))}
           </div>
         )}
       </div>
-
-      {showNew && (
-        <NewTripDialog
-          onClose={() => setShowNew(false)}
-          onCreate={(v) => {
-            const id = createTrip(v);
-            setShowNew(false);
-            onOpenTrip(id);
-          }}
-        />
-      )}
 
       {confirmDelete && (
         <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setConfirmDelete(null)}>

@@ -4,6 +4,7 @@ export type ModuleId =
   | "vuelos"
   | "hoteles"
   | "itinerario"
+  | "tours"
   | "presupuesto";
 
 export const MODULE_LABELS: Record<ModuleId, string> = {
@@ -12,6 +13,7 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   vuelos: "Vuelos",
   hoteles: "Hoteles",
   itinerario: "Itinerario",
+  tours: "Tours y excursiones",
   presupuesto: "Presupuesto",
 };
 
@@ -21,6 +23,7 @@ export const ALL_MODULES: ModuleId[] = [
   "vuelos",
   "hoteles",
   "itinerario",
+  "tours",
   "presupuesto",
 ];
 
@@ -56,8 +59,19 @@ export type HotelData = {
 };
 
 export type Activity = { id: string; text: string };
-export type Day = { id: string; label: string; activities: Activity[] };
+export type Day = { id: string; label: string; date?: string; photo?: string; activities: Activity[] };
 export type Zone = { id: string; name: string; emoji: string; days: Day[] };
+
+export type Tour = {
+  id: string;
+  name: string;
+  notes: string;
+  price: number | null;
+  link: string;
+  dayId?: string; // linked itinerary day, or unassigned
+};
+
+export type Person = { id: string; name: string };
 
 export type BudgetItem = {
   id: string;
@@ -65,6 +79,8 @@ export type BudgetItem = {
   cat: string;
   zone: string;
   amount: number;
+  paidBy?: string; // Person.id
+  splitAmong?: string[]; // Person.id[] — omitted/empty means "everyone"
 };
 
 export type TripMeta = {
@@ -90,7 +106,9 @@ export type TripData = {
   flights: FlightData[];
   hotels: HotelData[];
   zones: Zone[];
+  tours: Tour[];
   budget: BudgetItem[];
+  people: Person[];
 };
 
 export const EMPTY_TRIP_DATA: TripData = {
@@ -98,7 +116,9 @@ export const EMPTY_TRIP_DATA: TripData = {
   flights: [],
   hotels: [],
   zones: [],
+  tours: [],
   budget: [],
+  people: [],
 };
 
 export const BUDGET_CATS = ["Vuelo", "Hotel", "Traslado", "Excursión", "Comida", "Compras", "Otros"];
