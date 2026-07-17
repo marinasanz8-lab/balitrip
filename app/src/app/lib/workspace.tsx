@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { getWorkspaceId, isSynced, useSyncedValue } from "./firebase";
 import { buildBaliSeed } from "./seed";
-import type { TripData, TripMeta } from "../types";
+import { normalizeTripData, type TripData, type TripMeta } from "../types";
 
 const SEED_FLAG = "seeded-bali-v1";
 
@@ -54,7 +54,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       trips,
       ready,
       synced: isSynced(),
-      getTripEntry: (id) => ws.trips?.[id],
+      getTripEntry: (id) => {
+        const entry = ws.trips?.[id];
+        return entry ? { ...entry, data: normalizeTripData(entry.data) } : undefined;
+      },
       updateTripMeta: (id, partial) => {
         setWs((prev) => {
           const entry = prev.trips[id];
@@ -73,7 +76,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         setWs((prev) => {
           const entry = prev.trips[id];
           if (!entry) return prev;
-          const nextData = typeof updater === "function" ? (updater as (p: TripData) => TripData)(entry.data) : updater;
+          const currentData = normalizeTripData(entry.data);
+          const nextData = typeof updater === "function" ? (updater as (p: TripData) => TripData)(currentData) : updater;
           return { trips: { ...prev.trips, [id]: { ...entry, data: nextData } } };
         });
       },

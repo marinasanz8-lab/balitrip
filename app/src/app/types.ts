@@ -130,6 +130,27 @@ export const EMPTY_TRIP_DATA: TripData = {
   people: [],
 };
 
+/** Fills in any fields missing from trip data saved by an older version of
+ * the app — in particular, before `itineraries` existed, trips stored a
+ * single flat `zones` array directly. Safe to run on already-current data. */
+export function normalizeTripData(raw: unknown): TripData {
+  const r = (raw ?? {}) as Partial<TripData> & { zones?: Zone[] };
+  const itineraries = Array.isArray(r.itineraries)
+    ? r.itineraries
+    : Array.isArray(r.zones) && r.zones.length > 0
+    ? [{ id: "legacy", name: "Itinerario", zones: r.zones }]
+    : [];
+  return {
+    checklist: Array.isArray(r.checklist) ? r.checklist : [],
+    flights: Array.isArray(r.flights) ? r.flights : [],
+    hotels: Array.isArray(r.hotels) ? r.hotels : [],
+    itineraries,
+    tours: Array.isArray(r.tours) ? r.tours : [],
+    budget: Array.isArray(r.budget) ? r.budget : [],
+    people: Array.isArray(r.people) ? r.people : [],
+  };
+}
+
 export const BUDGET_CATS = ["Vuelo", "Hotel", "Traslado", "Excursión", "Comida", "Compras", "Otros"];
 export const ZONE_COLORS = ["#D97706", "#16A34A", "#0891B2", "#7C3AED", "#C2410C", "#0369A1", "#475569"];
 
