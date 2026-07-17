@@ -94,14 +94,14 @@ export function FlightsSection({ flights, setFlights }: { flights: FlightData[];
           {flights.map((f, i) => (
             <div key={i} className="bg-card border border-border rounded-2xl p-5">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full bg-primary/10 text-primary">
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full bg-info/10 text-info">
                   {f.leg || "Trayecto"}
                 </span>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => triggerAiImport(i)}
                     title="Importar de captura con IA"
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-info hover:bg-info/10 transition-all"
                   >
                     <Sparkles size={14} className={aiIdx === i ? "animate-pulse" : ""} />
                   </button>
@@ -135,7 +135,7 @@ export function FlightsSection({ flights, setFlights }: { flights: FlightData[];
                       <div className="text-[10px] text-muted-foreground">{f.duration}</div>
                       <div className="w-full flex items-center gap-1">
                         <div className="flex-1 h-px bg-border" />
-                        <Plane size={12} className="text-primary" />
+                        <Plane size={12} className="text-info" />
                         <div className="flex-1 h-px bg-border" />
                       </div>
                       <div className="text-[10px] text-muted-foreground">{f.stops}</div>
@@ -156,13 +156,13 @@ export function FlightsSection({ flights, setFlights }: { flights: FlightData[];
       <div className="flex flex-col sm:flex-row gap-2">
         <button
           onClick={addFlight}
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-info hover:border-info/50 transition-colors"
         >
           <Plus size={15} /> Añadir vuelo
         </button>
         <button
           onClick={() => { setPasteOpen((v) => !v); setPasteError(""); }}
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-info hover:border-info/50 transition-colors"
         >
           <ClipboardPaste size={15} /> Pegar texto de la reserva
         </button>

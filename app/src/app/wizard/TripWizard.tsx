@@ -41,7 +41,7 @@ export function TripWizard({ onDone, onCancel }: { onDone: (tripId: string) => v
         </button>
       </div>
       <div className="h-1 bg-muted max-w-2xl mx-auto w-full rounded-full overflow-hidden mb-2">
-        <div className="h-full bg-primary transition-all duration-300" style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
+        <div className="h-full bg-info transition-all duration-300" style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
       </div>
 
       <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-6">

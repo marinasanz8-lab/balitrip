@@ -65,7 +65,7 @@ export function BudgetSection({
     <section id="presupuesto" className="py-14 px-4 max-w-4xl mx-auto">
       <SectionHeader eyebrow="Control de gastos" title="Presupuesto" />
       <div className="flex items-baseline gap-2 mb-7">
-        <span className="text-primary" style={{ fontFamily: "var(--font-display)", fontSize: "2.5rem", fontWeight: 700, lineHeight: 1 }}>
+        <span className="text-info" style={{ fontFamily: "var(--font-display)", fontSize: "2.5rem", fontWeight: 700, lineHeight: 1 }}>
           {fmt(total)} {symbol}
         </span>
         <span className="text-muted-foreground text-sm">total</span>
@@ -189,7 +189,7 @@ export function BudgetSection({
       {people.length > 0 && (
         <div className="bg-card border border-border rounded-2xl p-5 mb-5">
           <div className="flex items-center gap-2 mb-4">
-            <Scale size={15} className="text-primary" />
+            <Scale size={15} className="text-info" />
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Cuentas entre el grupo</p>
           </div>
 

@@ -53,7 +53,7 @@ export function CurrencyConverter({ currency }: { currency: string }) {
       {error ? (
         <div className="bg-card border border-border rounded-2xl p-6 text-center text-sm text-muted-foreground">
           No se pudo obtener el tipo de cambio ahora mismo.{" "}
-          <button onClick={fetchRate} className="text-primary underline">
+          <button onClick={fetchRate} className="text-info underline">
             Reintentar
           </button>
         </div>
@@ -77,7 +77,7 @@ export function CurrencyConverter({ currency }: { currency: string }) {
             <div className="relative h-px bg-border">
               <button
                 onClick={() => setReversed((r) => !r)}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all shadow-sm"
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-info hover:border-info transition-all shadow-sm"
               >
                 <ArrowDownUp size={14} />
               </button>
@@ -88,7 +88,7 @@ export function CurrencyConverter({ currency }: { currency: string }) {
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Euro</span>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">EUR</span>
               </div>
-              <div className="font-bold text-primary" style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.8rem, 6vw, 2.5rem)" }}>
+              <div className="font-bold text-info" style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.8rem, 6vw, 2.5rem)" }}>
                 {loading ? <span className="text-muted-foreground text-2xl animate-pulse">—</span> : fmtEur(eurNum)}
               </div>
             </div>
@@ -105,7 +105,7 @@ export function CurrencyConverter({ currency }: { currency: string }) {
               <button
                 key={amt}
                 onClick={() => handleLocal(String(amt))}
-                className="text-xs px-3 py-1.5 rounded-xl bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all"
+                className="text-xs px-3 py-1.5 rounded-xl bg-muted text-muted-foreground hover:bg-info/10 hover:text-info transition-all"
               >
                 {fmtLocal(amt)} {currency}
               </button>

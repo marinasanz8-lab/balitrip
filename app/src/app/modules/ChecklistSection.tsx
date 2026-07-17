@@ -64,14 +64,14 @@ export function ChecklistSection({
         <SectionHeader eyebrow="Antes de salir" title="Checklist" />
         {total > 0 && (
           <div className="text-right pb-1">
-            <div className="text-2xl font-bold text-primary" style={{ fontFamily: "var(--font-display)" }}>{pct}%</div>
+            <div className="text-2xl font-bold text-info" style={{ fontFamily: "var(--font-display)" }}>{pct}%</div>
             <div className="text-xs text-muted-foreground">{done}/{total}</div>
           </div>
         )}
       </div>
       {total > 0 && (
         <div className="h-1 bg-muted rounded-full mb-8 overflow-hidden">
-          <div className="h-full bg-primary rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+          <div className="h-full bg-info rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
         </div>
       )}
 
@@ -79,7 +79,7 @@ export function ChecklistSection({
         <button
           onClick={runAi}
           disabled={aiLoading}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-60"
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-info/10 text-info hover:bg-info/20 transition-colors disabled:opacity-60"
         >
           <Sparkles size={13} className={aiLoading ? "animate-pulse" : ""} />
           {aiLoading ? "Generando…" : "Generar con IA"}
@@ -107,7 +107,7 @@ export function ChecklistSection({
                     <button
                       onClick={() => toggle(cat.id, item.id)}
                       className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                        item.done ? "bg-primary border-primary" : "border-border hover:border-primary/60"
+                        item.done ? "bg-primary border-primary" : "border-border hover:border-info/60"
                       }`}
                     >
                       {item.done && <Check size={10} strokeWidth={3} className="text-primary-foreground" />}

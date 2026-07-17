@@ -21,7 +21,7 @@ export function TripView({ tripId, onBack, onSettings }: { tripId: string; onBac
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 text-center">
         <p className="text-muted-foreground">Este viaje ya no existe.</p>
-        <button onClick={onBack} className="text-primary underline text-sm">Volver a mis viajes</button>
+        <button onClick={onBack} className="text-info underline text-sm">Volver a mis viajes</button>
       </div>
     );
   }
@@ -126,7 +126,7 @@ export function TripView({ tripId, onBack, onSettings }: { tripId: string; onBac
       {enabled.length === 0 ? (
         <div className="max-w-4xl mx-auto px-4 py-16 text-center text-muted-foreground text-sm">
           Este viaje no tiene módulos activados.{" "}
-          <button onClick={onSettings} className="text-primary underline">Actívalos en ajustes</button>.
+          <button onClick={onSettings} className="text-info underline">Actívalos en ajustes</button>.
         </div>
       ) : (
         enabled.map((m, i) => (

@@ -47,7 +47,7 @@ export function SectionHeader({ eyebrow, title, action }: { eyebrow: string; tit
   return (
     <div className="mb-7 flex items-end justify-between gap-3">
       <div>
-        <p className="text-[10px] uppercase tracking-[0.2em] text-primary mb-1.5">{eyebrow}</p>
+        <p className="text-[10px] uppercase tracking-[0.2em] text-info mb-1.5">{eyebrow}</p>
         <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
           {title}
         </h2>

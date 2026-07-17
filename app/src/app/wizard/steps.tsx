@@ -192,7 +192,7 @@ export function StepItinerary({ state, setState }: StepProps) {
             <span>{allocated} de {totalDays} días repartidos</span>
           </div>
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(100, (allocated / totalDays) * 100)}%` }} />
+            <div className="h-full bg-info rounded-full transition-all" style={{ width: `${Math.min(100, (allocated / totalDays) * 100)}%` }} />
           </div>
         </div>
       )}
@@ -283,7 +283,7 @@ export function StepDone({ state }: StepProps) {
       {meta.modules.length > 0 ? (
         <div className="flex flex-wrap justify-center gap-1.5 max-w-sm mx-auto">
           {meta.modules.map((m) => (
-            <span key={m} className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-full bg-primary/10 text-primary">
+            <span key={m} className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-full bg-info/10 text-info">
               <Check size={11} /> {MODULE_LABELS[m]}
             </span>
           ))}

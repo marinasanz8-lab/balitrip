@@ -68,7 +68,7 @@ function Router() {
       return (
         <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 text-center">
           <p className="text-muted-foreground">Este viaje ya no existe.</p>
-          <button onClick={() => navigate("/")} className="text-primary underline text-sm">Volver a mis viajes</button>
+          <button onClick={() => navigate("/")} className="text-info underline text-sm">Volver a mis viajes</button>
         </div>
       );
     }

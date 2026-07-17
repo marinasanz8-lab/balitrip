@@ -31,7 +31,7 @@ function isPastTrip(trip: TripMeta): boolean {
 function TripCard({ trip, onOpen, onDelete }: { trip: TripMeta; onOpen: () => void; onDelete: () => void }) {
   const countdown = daysUntil(trip.startDate);
   return (
-    <div className="group relative bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/40 transition-colors cursor-pointer" onClick={onOpen}>
+    <div className="group relative bg-card border border-border rounded-2xl overflow-hidden hover:border-info/40 transition-colors cursor-pointer" onClick={onOpen}>
       <div className="relative h-36 flex items-center justify-center" style={{ background: trip.cover ? undefined : `linear-gradient(135deg, ${trip.color}, ${trip.color}99)` }}>
         {trip.cover ? <img src={trip.cover} alt={trip.name} className="w-full h-full object-cover" /> : <span className="text-5xl">{trip.emoji}</span>}
         <button
@@ -51,7 +51,7 @@ function TripCard({ trip, onOpen, onDelete }: { trip: TripMeta; onOpen: () => vo
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <CalendarDays size={11} /> {fmtRange(trip.startDate, trip.endDate)}
         </p>
-        {countdown && <p className="text-[11px] font-semibold text-primary mt-2">{countdown}</p>}
+        {countdown && <p className="text-[11px] font-semibold text-info mt-2">{countdown}</p>}
       </div>
     </div>
   );
@@ -69,7 +69,7 @@ export function TripsHome({ onOpenTrip, onNewTrip }: { onOpenTrip: (id: string) 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 pt-14 pb-8">
-        <p className="text-[10px] uppercase tracking-[0.25em] text-primary mb-2">{synced ? "Sincronizado" : "Solo en este dispositivo"}</p>
+        <p className="text-[10px] uppercase tracking-[0.25em] text-info mb-2">{synced ? "Sincronizado" : "Solo en este dispositivo"}</p>
         <div className="flex items-end justify-between gap-3 mb-6">
           <h1 className="text-4xl md:text-5xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Mis viajes</h1>
           <button onClick={onNewTrip} className="flex items-center gap-1.5 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity flex-shrink-0">

@@ -24,14 +24,14 @@ export function AISettings() {
   return (
     <div className="bg-card border border-border rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-2">
-        <KeyRound size={15} className="text-primary" />
+        <KeyRound size={15} className="text-info" />
         <h3 className="font-semibold text-sm">Clave de API (Anthropic)</h3>
       </div>
       <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
         Necesaria para leer capturas de vuelos y generar checklists con IA. Se guarda solo en
         este navegador (nunca se sincroniza ni se sube a ningún servidor propio) y las llamadas
         van directas de tu dispositivo a Anthropic. Consigue una clave en{" "}
-        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" className="text-info underline">
           console.anthropic.com
         </a>
         .

@@ -143,7 +143,7 @@ export function HotelsSection({ hotels, setHotels }: { hotels: HotelData[]; setH
                     {(h.bookingLink || h.address) && (
                       <div className="flex gap-2 mt-3 pt-3 border-t border-border flex-wrap">
                         {h.bookingLink && (
-                          <a href={h.bookingLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                          <a href={h.bookingLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-info/10 text-info hover:bg-info/20 transition-colors">
                             <ExternalLink size={10} /> Ver reserva
                           </a>
                         )}
@@ -172,7 +172,7 @@ export function HotelsSection({ hotels, setHotels }: { hotels: HotelData[]; setH
       )}
 
       {editId && draft && (
-        <div className="mt-6 mx-4 max-w-4xl md:mx-auto bg-card border border-primary/30 rounded-2xl p-5">
+        <div className="mt-6 mx-4 max-w-4xl md:mx-auto bg-card border border-info/30 rounded-2xl p-5">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">Editando alojamiento</p>
           <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={onPhotoChosen} />
           <div className="flex items-center gap-3 mb-4">
@@ -202,7 +202,7 @@ export function HotelsSection({ hotels, setHotels }: { hotels: HotelData[]; setH
       )}
 
       <div className="px-4 max-w-4xl mx-auto mt-6">
-        <button onClick={addHotel} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors">
+        <button onClick={addHotel} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-info hover:border-info/50 transition-colors">
           <Plus size={15} /> Añadir hotel
         </button>
       </div>

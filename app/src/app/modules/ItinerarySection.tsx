@@ -187,7 +187,7 @@ export function ItinerarySection({
                 onChange={(e) => setRenameValue(e.target.value)}
                 onBlur={() => commitRename(i)}
                 onKeyDown={(e) => { if (e.key === "Enter") commitRename(i); if (e.key === "Escape") setRenamingIdx(null); }}
-                className="text-sm font-medium px-3.5 py-2 rounded-full bg-muted outline-none ring-2 ring-primary w-36"
+                className="text-sm font-medium px-3.5 py-2 rounded-full bg-muted outline-none ring-2 ring-info w-36"
               />
             );
           }
@@ -218,7 +218,7 @@ export function ItinerarySection({
         <button
           onClick={addItinerary}
           title="Añadir itinerario para otra persona"
-          className="flex items-center gap-1 pl-2.5 pr-3 py-2 rounded-full text-xs font-medium border border-dashed border-border text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+          className="flex items-center gap-1 pl-2.5 pr-3 py-2 rounded-full text-xs font-medium border border-dashed border-border text-muted-foreground hover:text-info hover:border-info/50 transition-colors"
         >
           <Plus size={13} /> Itinerario
         </button>
@@ -338,7 +338,7 @@ export function ItinerarySection({
                         ))}
                         <button
                           onClick={() => triggerPhoto(day.id)}
-                          className="rounded-lg border border-dashed border-border text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors flex items-center justify-center"
+                          className="rounded-lg border border-dashed border-border text-muted-foreground hover:text-info hover:border-info/50 transition-colors flex items-center justify-center"
                           style={photos.length === 0 ? { gridColumn: "span 2", gridRow: "span 2" } : undefined}
                         >
                           <Camera size={photos.length === 0 ? 20 : 14} />
@@ -348,7 +348,7 @@ export function ItinerarySection({
                       {tours.filter((t) => t.dayId === day.id).length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-4">
                           {tours.filter((t) => t.dayId === day.id).map((t) => (
-                            <span key={t.id} className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
+                            <span key={t.id} className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full bg-info/10 text-info">
                               <Compass size={10} /> {t.name}
                             </span>
                           ))}

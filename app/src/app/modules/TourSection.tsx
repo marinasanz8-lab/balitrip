@@ -57,7 +57,7 @@ export function TourSection({ tours, setTours, itineraries }: { tours: Tour[]; s
             <div key={t.id} className="bg-card border border-border rounded-2xl p-5">
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
-                  <Compass size={15} className="text-primary flex-shrink-0" />
+                  <Compass size={15} className="text-info flex-shrink-0" />
                   <h3 className="font-bold leading-snug" style={{ fontFamily: "var(--font-display)" }}>{t.name}</h3>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -98,14 +98,14 @@ export function TourSection({ tours, setTours, itineraries }: { tours: Tour[]; s
               ) : (
                 <>
                   <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    {fmtPrice(t.price) && <span className="text-sm font-semibold text-primary" style={{ fontFamily: "var(--font-mono)" }}>{fmtPrice(t.price)}</span>}
+                    {fmtPrice(t.price) && <span className="text-sm font-semibold text-info" style={{ fontFamily: "var(--font-mono)" }}>{fmtPrice(t.price)}</span>}
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                       <MapPinned size={11} /> {dayLabel(t.dayId) ?? "Sin asignar a un día"}
                     </span>
                   </div>
                   {t.notes && <p className="text-xs text-muted-foreground mb-2">{t.notes}</p>}
                   {t.link && (
-                    <a href={t.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                    <a href={t.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-info/10 text-info hover:bg-info/20 transition-colors">
                       <ExternalLink size={10} /> Ver / reservar
                     </a>
                   )}
@@ -116,7 +116,7 @@ export function TourSection({ tours, setTours, itineraries }: { tours: Tour[]; s
         </div>
       )}
 
-      <button onClick={addTour} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors">
+      <button onClick={addTour} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-info hover:border-info/50 transition-colors">
         <Plus size={15} /> Añadir tour
       </button>
     </section>
