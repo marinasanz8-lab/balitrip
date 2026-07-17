@@ -143,17 +143,25 @@ export function StepCurrency({ state, setState }: StepProps) {
 export function StepItinerary({ state, setState }: StepProps) {
   const { meta, data } = state;
   const { setMeta, updateData } = useTripSetters(state, setState);
+  const zones = data.itineraries[0]?.zones ?? [];
   const totalDays = tripLengthDays(meta.startDate, meta.endDate);
-  const allocated = data.zones.reduce((s, z) => s + z.days.length, 0);
+  const allocated = zones.reduce((s, z) => s + z.days.length, 0);
   const remaining = Math.max(1, totalDays - allocated || 1);
 
   const [place, setPlace] = useState("");
   const [count, setCount] = useState(remaining);
 
+  const withFirstItinerary = (fn: (zs: typeof zones) => typeof zones) => {
+    updateData((p) => {
+      const base = p.itineraries.length > 0 ? p.itineraries : [{ id: uid(), name: "Itinerario", zones: [] }];
+      return { ...p, itineraries: base.map((it, i) => (i === 0 ? { ...it, zones: fn(it.zones) } : it)) };
+    });
+  };
+
   const addZone = () => {
     const name = place.trim();
     if (!name) return;
-    const emoji = TRIP_EMOJIS[data.zones.length % TRIP_EMOJIS.length];
+    const emoji = TRIP_EMOJIS[zones.length % TRIP_EMOJIS.length];
     const n = Math.max(1, count);
     const days: Day[] = Array.from({ length: n }).map((_, i) => {
       const offset = allocated + i;
@@ -163,17 +171,17 @@ export function StepItinerary({ state, setState }: StepProps) {
       }
       return { id: uid(), label: `Día ${offset + 1}`, activities: [] };
     });
-    updateData((p) => ({ ...p, zones: [...p.zones, { id: uid(), name, emoji, days }] }));
+    withFirstItinerary((zs) => [...zs, { id: uid(), name, emoji, days }]);
     setPlace("");
     setCount(Math.max(1, remaining - n));
   };
 
-  const delZone = (id: string) => updateData((p) => ({ ...p, zones: p.zones.filter((z) => z.id !== id) }));
+  const delZone = (id: string) => withFirstItinerary((zs) => zs.filter((z) => z.id !== id));
 
   return (
     <OptionalStepFrame
       question="¿Quieres añadir el itinerario?"
-      hint="Reparte los días del viaje entre los sitios que vais a visitar. Los planes de cada día los iréis rellenando después, dentro del viaje."
+      hint="Reparte los días del viaje entre los sitios que vais a visitar. Los planes de cada día los iréis rellenando después, dentro del viaje. Si más adelante alguien del grupo se separa, se pueden crear itinerarios adicionales desde el propio viaje."
       moduleId="itinerario"
       meta={meta}
       setMeta={setMeta}
@@ -189,9 +197,9 @@ export function StepItinerary({ state, setState }: StepProps) {
         </div>
       )}
 
-      {data.zones.length > 0 && (
+      {zones.length > 0 && (
         <div className="space-y-2 mb-4">
-          {data.zones.map((z) => (
+          {zones.map((z) => (
             <div key={z.id} className="flex items-center gap-3 bg-muted rounded-xl px-4 py-2.5">
               <span className="text-lg">{z.emoji}</span>
               <div className="flex-1">
@@ -228,15 +236,16 @@ export function StepItinerary({ state, setState }: StepProps) {
 export function StepTours({ state, setState }: StepProps) {
   const { meta, data } = state;
   const { setMeta, updateData } = useTripSetters(state, setState);
+  const hasZones = (data.itineraries[0]?.zones.length ?? 0) > 0;
   return (
     <OptionalStepFrame
       question="¿Quieres añadir algún tour o excursión?"
-      hint={data.zones.length === 0 ? "Puedes dejarlos sin asignar a un día, o volver al paso anterior para añadir primero el itinerario." : "Puedes asignar cada uno a un día del itinerario, o dejarlo sin asignar."}
+      hint={!hasZones ? "Puedes dejarlos sin asignar a un día, o volver al paso anterior para añadir primero el itinerario." : "Puedes asignar cada uno a un día del itinerario, o dejarlo sin asignar."}
       moduleId="tours"
       meta={meta}
       setMeta={setMeta}
     >
-      <TourSection tours={data.tours} setTours={fieldSetter(updateData, "tours")} zones={data.zones} />
+      <TourSection tours={data.tours} setTours={fieldSetter(updateData, "tours")} itineraries={data.itineraries} />
     </OptionalStepFrame>
   );
 }

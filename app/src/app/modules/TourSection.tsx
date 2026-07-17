@@ -2,20 +2,28 @@ import { useState } from "react";
 import { Compass, Edit2, ExternalLink, MapPinned, Plus, Save, Trash2 } from "lucide-react";
 import { SectionHeader } from "./shared";
 import { uid } from "../lib/util";
-import type { Tour, Zone } from "../types";
+import type { Itinerary, Tour } from "../types";
 
 const EMPTY_TOUR: Omit<Tour, "id"> = { name: "", notes: "", price: null, link: "", dayId: undefined };
 
-function dayOptions(zones: Zone[]): { id: string; label: string }[] {
+function dayOptions(itineraries: Itinerary[]): { id: string; label: string }[] {
   const opts: { id: string; label: string }[] = [];
-  for (const z of zones) for (const d of z.days) opts.push({ id: d.id, label: `${z.emoji} ${z.name} · ${d.label}` });
+  const showItinName = itineraries.length > 1;
+  for (const it of itineraries) {
+    for (const z of it.zones) {
+      for (const d of z.days) {
+        const label = showItinName ? `${it.name} · ${z.emoji} ${z.name} · ${d.label}` : `${z.emoji} ${z.name} · ${d.label}`;
+        opts.push({ id: d.id, label });
+      }
+    }
+  }
   return opts;
 }
 
-export function TourSection({ tours, setTours, zones }: { tours: Tour[]; setTours: (v: Tour[] | ((p: Tour[]) => Tour[])) => void; zones: Zone[] }) {
+export function TourSection({ tours, setTours, itineraries }: { tours: Tour[]; setTours: (v: Tour[] | ((p: Tour[]) => Tour[])) => void; itineraries: Itinerary[] }) {
   const [editId, setEditId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Tour | null>(null);
-  const options = dayOptions(zones);
+  const options = dayOptions(itineraries);
 
   const dayLabel = (dayId?: string) => options.find((o) => o.id === dayId)?.label;
 

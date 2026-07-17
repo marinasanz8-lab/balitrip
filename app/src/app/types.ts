@@ -59,8 +59,17 @@ export type HotelData = {
 };
 
 export type Activity = { id: string; text: string };
-export type Day = { id: string; label: string; date?: string; photo?: string; activities: Activity[] };
+export type Day = {
+  id: string;
+  label: string;
+  date?: string;
+  title?: string;
+  description?: string;
+  photos?: string[];
+  activities: Activity[];
+};
 export type Zone = { id: string; name: string; emoji: string; days: Day[] };
+export type Itinerary = { id: string; name: string; zones: Zone[] };
 
 export type Tour = {
   id: string;
@@ -105,7 +114,7 @@ export type TripData = {
   checklist: CheckCat[];
   flights: FlightData[];
   hotels: HotelData[];
-  zones: Zone[];
+  itineraries: Itinerary[];
   tours: Tour[];
   budget: BudgetItem[];
   people: Person[];
@@ -115,7 +124,7 @@ export const EMPTY_TRIP_DATA: TripData = {
   checklist: [],
   flights: [],
   hotels: [],
-  zones: [],
+  itineraries: [],
   tours: [],
   budget: [],
   people: [],

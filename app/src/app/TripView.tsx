@@ -146,6 +146,12 @@ export function TripView({ tripId, onBack, onSettings }: { tripId: string; onBac
   );
 }
 
+function dedupZones(itineraries: TripData["itineraries"]) {
+  const seen = new Map<string, TripData["itineraries"][number]["zones"][number]>();
+  for (const it of itineraries) for (const z of it.zones) if (!seen.has(z.name)) seen.set(z.name, z);
+  return [...seen.values()];
+}
+
 function renderModule(
   m: ModuleId,
   meta: TripMeta,
@@ -163,9 +169,9 @@ function renderModule(
     case "hoteles":
       return <HotelsSection hotels={data.hotels} setHotels={fieldSetter(update, "hotels")} />;
     case "itinerario":
-      return <ItinerarySection zones={data.zones} setZones={fieldSetter(update, "zones")} tours={data.tours} />;
+      return <ItinerarySection itineraries={data.itineraries} setItineraries={fieldSetter(update, "itineraries")} tours={data.tours} />;
     case "tours":
-      return <TourSection tours={data.tours} setTours={fieldSetter(update, "tours")} zones={data.zones} />;
+      return <TourSection tours={data.tours} setTours={fieldSetter(update, "tours")} itineraries={data.itineraries} />;
     case "presupuesto":
       return (
         <BudgetSection
@@ -173,7 +179,7 @@ function renderModule(
           setItems={fieldSetter(update, "budget")}
           people={data.people}
           setPeople={fieldSetter(update, "people")}
-          zones={data.zones}
+          zones={dedupZones(data.itineraries)}
           currency={meta.currency}
           onShare={onShare}
         />

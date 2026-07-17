@@ -113,7 +113,7 @@ export function buildBaliSeed(): { meta: TripMeta; data: TripData } {
     checklist: readOld(OLD_KEYS.checklist, DEF_CHECK),
     flights: readOld(OLD_KEYS.flights, DEF_FLIGHTS),
     hotels: readOld(OLD_KEYS.hotels, DEF_HOTELS),
-    zones: readOld(OLD_KEYS.zones, DEF_ZONES),
+    itineraries: [{ id: uid(), name: "Itinerario", zones: readOld(OLD_KEYS.zones, DEF_ZONES) }],
     tours: [],
     budget: readOld(OLD_KEYS.budget, DEF_BUDGET),
     people: [],
