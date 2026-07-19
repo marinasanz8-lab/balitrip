@@ -12,6 +12,18 @@ function compactDate(day: Day): string {
   return day.label;
 }
 
+/** Grid placement for a photo tile in the mosaic, adapted to how many
+ * photos the day has — a lone photo goes full-width, a pair sits side by
+ * side, a trio is one big tile plus two stacked, four form an even 2×2,
+ * and five or more fall back to one hero tile plus a thumbnail strip. */
+function photoSpan(idx: number, total: number): React.CSSProperties | undefined {
+  if (total === 1) return { gridColumn: "span 4", gridRow: "span 3" };
+  if (total === 2) return { gridColumn: "span 2", gridRow: "span 2" };
+  if (total === 3) return idx === 0 ? { gridColumn: "span 2", gridRow: "span 2" } : { gridColumn: "span 2" };
+  if (total === 4) return { gridColumn: "span 2" };
+  return idx === 0 ? { gridColumn: "span 2", gridRow: "span 2" } : undefined;
+}
+
 export function ItinerarySection({
   itineraries,
   setItineraries,
@@ -32,6 +44,7 @@ export function ItinerarySection({
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [addDayOpen, setAddDayOpen] = useState(false);
+  const [photoModalDay, setPhotoModalDay] = useState<string | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const photoTargetDay = useRef<string | null>(null);
@@ -51,6 +64,7 @@ export function ItinerarySection({
   const color = ZONE_COLORS[activeZone % ZONE_COLORS.length];
   const days = zone?.days ?? [];
   const allDayOptions = zones.flatMap((z) => z.days.map((d) => ({ id: d.id, label: `${z.emoji} ${z.name} · ${d.label}` })));
+  const modalPhotos = days.find((d) => d.id === photoModalDay)?.photos ?? [];
 
   // Sets zones only within the currently active itinerary.
   const setZones = (updater: Zone[] | ((p: Zone[]) => Zone[])) => {
@@ -338,7 +352,7 @@ export function ItinerarySection({
                           <div
                             key={idx}
                             className="relative group/photo overflow-hidden rounded-lg bg-muted"
-                            style={idx === 0 ? { gridColumn: "span 2", gridRow: "span 2" } : undefined}
+                            style={photoSpan(idx, photos.length)}
                           >
                             <img src={p} alt="" className="w-full h-full object-cover" />
                             <button
@@ -350,7 +364,7 @@ export function ItinerarySection({
                           </div>
                         ))}
                         <button
-                          onClick={() => triggerPhoto(day.id)}
+                          onClick={() => setPhotoModalDay(day.id)}
                           className="rounded-lg border border-dashed border-border text-muted-foreground hover:text-info hover:border-info/50 transition-colors flex items-center justify-center"
                           style={photos.length === 0 ? { gridColumn: "span 2", gridRow: "span 2" } : undefined}
                         >
@@ -447,6 +461,40 @@ export function ItinerarySection({
               <button onClick={addDay} className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium">Añadir</button>
               <button onClick={closeAddDay} className="px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {photoModalDay && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPhotoModalDay(null)}>
+          <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Fotos del día</p>
+              <button onClick={() => setPhotoModalDay(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            {modalPhotos.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {modalPhotos.map((p, idx) => (
+                  <div key={idx} className="relative group/photo aspect-square overflow-hidden rounded-lg bg-muted">
+                    <img src={p} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removePhoto(photoModalDay, idx)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-all"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => triggerPhoto(photoModalDay)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-info hover:border-info/50 transition-colors"
+            >
+              <Camera size={15} /> Subir fotos
+            </button>
           </div>
         </div>
       )}
