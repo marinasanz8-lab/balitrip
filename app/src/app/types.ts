@@ -130,18 +130,40 @@ export const EMPTY_TRIP_DATA: TripData = {
   people: [],
 };
 
+/** Firebase Realtime Database silently drops any array/object field that's
+ * empty at save time (e.g. a freshly-created itinerary with no zones yet),
+ * so it can come back from sync missing entirely instead of as `[]`. These
+ * normalize a nested structure back to always having its array fields. */
+function normalizeDay(raw: unknown): Day {
+  const d = (raw ?? {}) as Partial<Day>;
+  return { id: d.id ?? "", label: d.label ?? "", date: d.date, title: d.title, description: d.description, photos: d.photos, activities: Array.isArray(d.activities) ? d.activities : [] };
+}
+function normalizeZone(raw: unknown): Zone {
+  const z = (raw ?? {}) as Partial<Zone>;
+  return { id: z.id ?? "", name: z.name ?? "", emoji: z.emoji ?? "", days: Array.isArray(z.days) ? z.days.map(normalizeDay) : [] };
+}
+function normalizeItinerary(raw: unknown): Itinerary {
+  const it = (raw ?? {}) as Partial<Itinerary>;
+  return { id: it.id ?? "", name: it.name ?? "", zones: Array.isArray(it.zones) ? it.zones.map(normalizeZone) : [] };
+}
+function normalizeCheckCat(raw: unknown): CheckCat {
+  const c = (raw ?? {}) as Partial<CheckCat>;
+  return { id: c.id ?? "", name: c.name ?? "", items: Array.isArray(c.items) ? c.items : [] };
+}
+
 /** Fills in any fields missing from trip data saved by an older version of
  * the app — in particular, before `itineraries` existed, trips stored a
- * single flat `zones` array directly. Safe to run on already-current data. */
+ * single flat `zones` array directly — and repairs the empty-array gaps
+ * Firebase leaves behind. Safe to run on already-current data. */
 export function normalizeTripData(raw: unknown): TripData {
   const r = (raw ?? {}) as Partial<TripData> & { zones?: Zone[] };
   const itineraries = Array.isArray(r.itineraries)
-    ? r.itineraries
+    ? r.itineraries.map(normalizeItinerary)
     : Array.isArray(r.zones) && r.zones.length > 0
-    ? [{ id: "legacy", name: "Itinerario", zones: r.zones }]
+    ? [{ id: "legacy", name: "Itinerario", zones: r.zones.map(normalizeZone) }]
     : [];
   return {
-    checklist: Array.isArray(r.checklist) ? r.checklist : [],
+    checklist: Array.isArray(r.checklist) ? r.checklist.map(normalizeCheckCat) : [],
     flights: Array.isArray(r.flights) ? r.flights : [],
     hotels: Array.isArray(r.hotels) ? r.hotels : [],
     itineraries,

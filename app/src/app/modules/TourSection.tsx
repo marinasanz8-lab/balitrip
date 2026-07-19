@@ -10,8 +10,8 @@ function dayOptions(itineraries: Itinerary[]): { id: string; label: string }[] {
   const opts: { id: string; label: string }[] = [];
   const showItinName = itineraries.length > 1;
   for (const it of itineraries) {
-    for (const z of it.zones) {
-      for (const d of z.days) {
+    for (const z of it.zones ?? []) {
+      for (const d of z.days ?? []) {
         const label = showItinName ? `${it.name} · ${z.emoji} ${z.name} · ${d.label}` : `${z.emoji} ${z.name} · ${d.label}`;
         opts.push({ id: d.id, label });
       }

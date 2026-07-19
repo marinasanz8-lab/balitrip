@@ -148,7 +148,7 @@ export function TripView({ tripId, onBack, onSettings }: { tripId: string; onBac
 
 function dedupZones(itineraries: TripData["itineraries"]) {
   const seen = new Map<string, TripData["itineraries"][number]["zones"][number]>();
-  for (const it of itineraries) for (const z of it.zones) if (!seen.has(z.name)) seen.set(z.name, z);
+  for (const it of itineraries) for (const z of it.zones ?? []) if (!seen.has(z.name)) seen.set(z.name, z);
   return [...seen.values()];
 }
 
