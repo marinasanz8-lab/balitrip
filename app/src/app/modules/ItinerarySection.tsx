@@ -216,11 +216,26 @@ export function ItinerarySection({
   return (
     <section id="itinerario" className="py-14">
       <div className="px-4 max-w-4xl mx-auto">
-        <SectionHeader eyebrow="Día a día" title="Itinerario" />
+        <SectionHeader
+          eyebrow="Día a día"
+          title="Itinerario"
+          action={
+            itineraries.length <= 1 ? (
+              <button
+                onClick={addItinerary}
+                title="Añadir itinerario para otra persona"
+                className="w-9 h-9 rounded-full border border-dashed border-border text-muted-foreground hover:text-info hover:border-info/50 transition-colors flex items-center justify-center flex-shrink-0"
+              >
+                <Plus size={16} />
+              </button>
+            ) : undefined
+          }
+        />
       </div>
       <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={onPhotoChosen} />
 
-      {/* Itinerary tabs — one per person/track */}
+      {/* Itinerary tabs — one per person/track, only shown once there's more than one to switch between */}
+      {itineraries.length > 1 && (
       <div className="px-4 max-w-4xl mx-auto mb-5 flex items-center gap-2 flex-wrap">
         {itineraries.map((it, i) => {
           const isActive = i === activeItin;
@@ -273,6 +288,7 @@ export function ItinerarySection({
           <Plus size={13} /> Itinerario
         </button>
       </div>
+      )}
 
       {!itin ? (
         <div className="px-4 max-w-4xl mx-auto">
