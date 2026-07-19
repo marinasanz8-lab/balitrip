@@ -13,7 +13,9 @@ export function CurrencyConverter({ currency }: { currency: string }) {
   const fetchRate = () => {
     setLoading(true);
     setError(false);
-    fetch(`https://api.frankfurter.app/latest?from=${currency}&to=EUR`)
+    // frankfurter.app now 301-redirects here; that redirect hop lacks CORS
+    // headers and browsers reject it, so hit the .dev host directly.
+    fetch(`https://api.frankfurter.dev/v1/latest?from=${currency}&to=EUR`)
       .then((r) => r.json())
       .then((data) => {
         const r: number = data.rates.EUR;
