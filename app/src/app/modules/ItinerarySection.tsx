@@ -195,13 +195,17 @@ export function ItinerarySection({
             );
           }
           return (
-            <div key={it.id} className="flex items-center group">
+            <div
+              key={it.id}
+              className="flex items-center rounded-full overflow-hidden transition-all"
+              style={{ backgroundColor: isActive ? "var(--primary)" : "var(--muted)" }}
+            >
               <button
                 onClick={() => setActiveItin(i)}
                 onDoubleClick={() => startRename(i)}
                 title="Doble clic para renombrar"
-                className="flex items-center gap-1.5 pl-3.5 pr-2 py-2 rounded-l-full text-sm font-medium transition-all"
-                style={{ backgroundColor: isActive ? "var(--primary)" : "var(--muted)", color: isActive ? "var(--primary-foreground)" : "var(--muted-foreground)" }}
+                className="flex items-center gap-1.5 pl-3.5 pr-2 py-2 text-sm font-medium"
+                style={{ color: isActive ? "var(--primary-foreground)" : "var(--muted-foreground)" }}
               >
                 <User size={13} />
                 <span className="whitespace-nowrap">{it.name}</span>
@@ -209,8 +213,8 @@ export function ItinerarySection({
               {itineraries.length > 1 && (
                 <button
                   onClick={() => delItinerary(i)}
-                  className="px-1.5 py-2 rounded-r-full transition-all"
-                  style={{ backgroundColor: isActive ? "var(--primary)" : "var(--muted)", color: isActive ? "rgba(255,255,255,0.7)" : "var(--muted-foreground)" }}
+                  className="pl-1 pr-3 py-2"
+                  style={{ color: isActive ? "rgba(255,255,255,0.7)" : "var(--muted-foreground)" }}
                 >
                   <X size={12} />
                 </button>
@@ -243,19 +247,23 @@ export function ItinerarySection({
                 const isActive = i === activeZone;
                 const col = ZONE_COLORS[i % ZONE_COLORS.length];
                 return (
-                  <div key={z.id} className="flex-shrink-0 flex items-center group">
+                  <div
+                    key={z.id}
+                    className="flex-shrink-0 flex items-center rounded-full overflow-hidden transition-all"
+                    style={{ backgroundColor: isActive ? col : "var(--muted)" }}
+                  >
                     <button
                       onClick={() => setActiveZone(i)}
-                      className="flex items-center gap-1.5 pl-3.5 pr-2 py-2 rounded-l-full text-sm font-medium transition-all"
-                      style={{ backgroundColor: isActive ? col : "var(--muted)", color: isActive ? "#fff" : "var(--muted-foreground)" }}
+                      className="flex items-center gap-1.5 pl-3.5 pr-2 py-2 text-sm font-medium"
+                      style={{ color: isActive ? "#fff" : "var(--muted-foreground)" }}
                     >
                       <span className="text-base">{z.emoji}</span>
                       <span className="whitespace-nowrap">{z.name}</span>
                     </button>
                     <button
                       onClick={() => delZone(i)}
-                      className="px-1.5 py-2 rounded-r-full transition-all"
-                      style={{ backgroundColor: isActive ? col : "var(--muted)", color: isActive ? "rgba(255,255,255,0.7)" : "var(--muted-foreground)" }}
+                      className="pl-1 pr-3 py-2"
+                      style={{ color: isActive ? "rgba(255,255,255,0.7)" : "var(--muted-foreground)" }}
                     >
                       <X size={12} />
                     </button>
