@@ -31,6 +31,7 @@ export function ItinerarySection({
   const [editingDay, setEditingDay] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
+  const [addDayOpen, setAddDayOpen] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const photoTargetDay = useRef<string | null>(null);
@@ -107,7 +108,9 @@ export function ItinerarySection({
     if (!label) return;
     setZones((zs) => zs.map((z, i) => (i === activeZone ? { ...z, days: [...z.days, { id: uid(), label, activities: [] }] } : z)));
     setNewDayLabel("");
+    setAddDayOpen(false);
   };
+  const closeAddDay = () => { setAddDayOpen(false); setNewDayLabel(""); };
 
   const delDay = (did: string) => {
     setZones((zs) => zs.map((z, i) => (i === activeZone ? { ...z, days: z.days.filter((d) => d.id !== did) } : z)));
@@ -234,30 +237,32 @@ export function ItinerarySection({
         </div>
       ) : (
         <>
-          <div ref={tabsRef} className="flex gap-2 overflow-x-auto px-4 pb-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            {zones.map((z, i) => {
-              const isActive = i === activeZone;
-              const col = ZONE_COLORS[i % ZONE_COLORS.length];
-              return (
-                <div key={z.id} className="flex-shrink-0 flex items-center group">
-                  <button
-                    onClick={() => setActiveZone(i)}
-                    className="flex items-center gap-1.5 pl-3.5 pr-2 py-2 rounded-l-xl text-sm font-medium transition-all"
-                    style={{ backgroundColor: isActive ? col : "var(--muted)", color: isActive ? "#fff" : "var(--muted-foreground)" }}
-                  >
-                    <span className="text-base">{z.emoji}</span>
-                    <span className="whitespace-nowrap">{z.name}</span>
-                  </button>
-                  <button
-                    onClick={() => delZone(i)}
-                    className="px-1.5 py-2 rounded-r-xl transition-all"
-                    style={{ backgroundColor: isActive ? col : "var(--muted)", color: isActive ? "rgba(255,255,255,0.7)" : "var(--muted-foreground)" }}
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              );
-            })}
+          <div className="max-w-4xl mx-auto px-4">
+            <div ref={tabsRef} className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+              {zones.map((z, i) => {
+                const isActive = i === activeZone;
+                const col = ZONE_COLORS[i % ZONE_COLORS.length];
+                return (
+                  <div key={z.id} className="flex-shrink-0 flex items-center group">
+                    <button
+                      onClick={() => setActiveZone(i)}
+                      className="flex items-center gap-1.5 pl-3.5 pr-2 py-2 rounded-l-full text-sm font-medium transition-all"
+                      style={{ backgroundColor: isActive ? col : "var(--muted)", color: isActive ? "#fff" : "var(--muted-foreground)" }}
+                    >
+                      <span className="text-base">{z.emoji}</span>
+                      <span className="whitespace-nowrap">{z.name}</span>
+                    </button>
+                    <button
+                      onClick={() => delZone(i)}
+                      className="px-1.5 py-2 rounded-r-full transition-all"
+                      style={{ backgroundColor: isActive ? col : "var(--muted)", color: isActive ? "rgba(255,255,255,0.7)" : "var(--muted-foreground)" }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {zone && (
@@ -401,19 +406,41 @@ export function ItinerarySection({
                 );
               })}
 
-              <div className="flex gap-2">
-                <input
-                  className="flex-1 text-sm bg-muted rounded-xl px-3 py-2.5 outline-none placeholder:text-muted-foreground"
-                  placeholder="Nuevo día (ej. Lun 14 Sep)"
-                  value={newDayLabel}
-                  onChange={(e) => setNewDayLabel(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addDay()}
-                />
-                <button onClick={addDay} className="px-4 py-2.5 bg-muted text-foreground rounded-xl hover:bg-muted/70 transition-colors flex-shrink-0 text-sm font-medium">Añadir día</button>
-              </div>
+              <button
+                onClick={() => setAddDayOpen(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-border text-sm text-muted-foreground hover:text-info hover:border-info/50 transition-colors"
+              >
+                <Plus size={15} /> Añadir día
+              </button>
             </div>
           )}
         </>
+      )}
+
+      {addDayOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={closeAddDay}>
+          <div className="bg-card border border-border rounded-2xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Nuevo día</p>
+              <button onClick={closeAddDay} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            <label className="text-xs text-muted-foreground block mb-1">Etiqueta del día</label>
+            <input
+              autoFocus
+              className="w-full text-sm bg-muted rounded-xl px-3 py-2.5 outline-none placeholder:text-muted-foreground"
+              placeholder="ej. Lun 14 Sep"
+              value={newDayLabel}
+              onChange={(e) => setNewDayLabel(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addDay()}
+            />
+            <div className="flex gap-2 mt-4">
+              <button onClick={addDay} className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium">Añadir</button>
+              <button onClick={closeAddDay} className="px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {itin && (
