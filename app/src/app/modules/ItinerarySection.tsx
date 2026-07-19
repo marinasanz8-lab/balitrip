@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, Compass, Edit2, Plus, Save, Trash2, User, X } from "lucide-react";
+import { Camera, ChevronDown, ChevronUp, Compass, Edit2, Plus, Save, Trash2, User, X } from "lucide-react";
 import { SectionHeader } from "./shared";
 import { fileToResizedDataUrl, uid } from "../lib/util";
 import { ZONE_COLORS, TRIP_EMOJIS, type Activity, type Day, type Itinerary, type Tour, type Zone } from "../types";
@@ -45,6 +45,8 @@ export function ItinerarySection({
   const [editDesc, setEditDesc] = useState("");
   const [addDayOpen, setAddDayOpen] = useState(false);
   const [photoModalDay, setPhotoModalDay] = useState<string | null>(null);
+  const [editingAct, setEditingAct] = useState<{ dayId: string; actId: string } | null>(null);
+  const [editActText, setEditActText] = useState("");
   const tabsRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const photoTargetDay = useRef<string | null>(null);
@@ -98,6 +100,33 @@ export function ItinerarySection({
     const day = days.find((d) => d.id === did);
     if (!day) return;
     updateDay(did, { activities: day.activities.filter((a) => a.id !== aid) });
+  };
+
+  const startEditAct = (did: string, a: Activity) => {
+    setEditingAct({ dayId: did, actId: a.id });
+    setEditActText(a.text);
+  };
+  const cancelEditAct = () => setEditingAct(null);
+  const saveEditAct = () => {
+    if (!editingAct) return;
+    const text = editActText.trim();
+    const { dayId, actId } = editingAct;
+    setEditingAct(null);
+    if (!text) return;
+    const day = days.find((d) => d.id === dayId);
+    if (!day) return;
+    updateDay(dayId, { activities: day.activities.map((a) => (a.id === actId ? { ...a, text } : a)) });
+  };
+
+  const reorderAct = (did: string, aid: string, dir: -1 | 1) => {
+    const day = days.find((d) => d.id === did);
+    if (!day) return;
+    const idx = day.activities.findIndex((a) => a.id === aid);
+    const swapWith = idx + dir;
+    if (idx < 0 || swapWith < 0 || swapWith >= day.activities.length) return;
+    const arr = [...day.activities];
+    [arr[idx], arr[swapWith]] = [arr[swapWith], arr[idx]];
+    updateDay(did, { activities: arr });
   };
 
   const moveAct = (fromDayId: string, activityId: string, toDayId: string) => {
@@ -386,26 +415,50 @@ export function ItinerarySection({
                       <div className="mt-4 pt-4 border-t border-border">
                         {day.activities.length > 0 && (
                           <ul className="space-y-2 mb-3">
-                            {day.activities.map((a) => (
+                            {day.activities.map((a, aidx) => (
                               <li key={a.id} className="flex items-start gap-2.5 group">
                                 <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: color }} />
-                                <span className="flex-1 text-sm leading-relaxed">{a.text}</span>
-                                {allDayOptions.length > 1 && (
-                                  <select
-                                    defaultValue=""
-                                    title="Mover a otro día"
-                                    onChange={(e) => { moveAct(day.id, a.id, e.target.value); e.currentTarget.value = ""; }}
-                                    className="opacity-0 group-hover:opacity-100 transition-all text-[11px] bg-transparent text-muted-foreground hover:text-foreground outline-none cursor-pointer flex-shrink-0"
+                                {editingAct?.dayId === day.id && editingAct.actId === a.id ? (
+                                  <input
+                                    autoFocus
+                                    value={editActText}
+                                    onChange={(e) => setEditActText(e.target.value)}
+                                    onBlur={saveEditAct}
+                                    onKeyDown={(e) => { if (e.key === "Enter") saveEditAct(); if (e.key === "Escape") cancelEditAct(); }}
+                                    className="flex-1 text-sm leading-relaxed bg-muted rounded-lg px-2 py-0.5 outline-none ring-1 ring-info"
+                                  />
+                                ) : (
+                                  <span
+                                    onClick={() => startEditAct(day.id, a)}
+                                    className="flex-1 text-sm leading-relaxed cursor-text hover:bg-muted/60 rounded-lg px-0.5 -mx-0.5 transition-colors"
                                   >
-                                    <option value="" disabled>→ mover</option>
-                                    {allDayOptions.filter((o) => o.id !== day.id).map((o) => (
-                                      <option key={o.id} value={o.id}>{o.label}</option>
-                                    ))}
-                                  </select>
+                                    {a.text}
+                                  </span>
                                 )}
-                                <button onClick={() => delAct(day.id, a.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all mt-0.5 flex-shrink-0">
-                                  <X size={12} />
-                                </button>
+                                <div className="opacity-0 group-hover:opacity-100 transition-all flex items-center flex-shrink-0">
+                                  <button onClick={() => reorderAct(day.id, a.id, -1)} disabled={aidx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:pointer-events-none transition-colors p-0.5">
+                                    <ChevronUp size={12} />
+                                  </button>
+                                  <button onClick={() => reorderAct(day.id, a.id, 1)} disabled={aidx === day.activities.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:pointer-events-none transition-colors p-0.5">
+                                    <ChevronDown size={12} />
+                                  </button>
+                                  {allDayOptions.length > 1 && (
+                                    <select
+                                      defaultValue=""
+                                      title="Mover a otro día"
+                                      onChange={(e) => { moveAct(day.id, a.id, e.target.value); e.currentTarget.value = ""; }}
+                                      className="text-[11px] bg-transparent text-muted-foreground hover:text-foreground outline-none cursor-pointer ml-1"
+                                    >
+                                      <option value="" disabled>→ mover</option>
+                                      {allDayOptions.filter((o) => o.id !== day.id).map((o) => (
+                                        <option key={o.id} value={o.id}>{o.label}</option>
+                                      ))}
+                                    </select>
+                                  )}
+                                  <button onClick={() => delAct(day.id, a.id)} className="text-muted-foreground hover:text-destructive transition-colors ml-1 p-0.5">
+                                    <X size={12} />
+                                  </button>
+                                </div>
                               </li>
                             ))}
                           </ul>
