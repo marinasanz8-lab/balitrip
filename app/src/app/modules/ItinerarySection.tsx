@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, ChevronDown, ChevronUp, Compass, Edit2, Plus, Save, Trash2, User, X } from "lucide-react";
+import { Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Compass, Edit2, Plus, Save, Trash2, User, X } from "lucide-react";
 import { SectionHeader } from "./shared";
 import { fileToResizedDataUrl, uid } from "../lib/util";
 import { ZONE_COLORS, TRIP_EMOJIS, type Activity, type Day, type Itinerary, type Tour, type Zone } from "../types";
@@ -17,10 +17,10 @@ function compactDate(day: Day): string {
  * side, a trio is one big tile plus two stacked, four form an even 2×2,
  * and five or more fall back to one hero tile plus a thumbnail strip. */
 function photoSpan(idx: number, total: number): React.CSSProperties | undefined {
-  if (total === 1) return { gridColumn: "span 4", gridRow: "span 3" };
+  if (total === 1) return { gridColumn: "span 4", gridRow: "span 2" };
   if (total === 2) return { gridColumn: "span 2", gridRow: "span 2" };
-  if (total === 3) return idx === 0 ? { gridColumn: "span 2", gridRow: "span 2" } : { gridColumn: "span 2" };
-  if (total === 4) return { gridColumn: "span 2" };
+  if (total === 3) return idx === 0 ? { gridColumn: "span 2", gridRow: "span 2" } : { gridColumn: "span 2", gridRow: "span 1" };
+  if (total === 4) return { gridColumn: "span 2", gridRow: "span 2" };
   return idx === 0 ? { gridColumn: "span 2", gridRow: "span 2" } : undefined;
 }
 
@@ -47,6 +47,7 @@ export function ItinerarySection({
   const [photoModalDay, setPhotoModalDay] = useState<string | null>(null);
   const [editingAct, setEditingAct] = useState<{ dayId: string; actId: string } | null>(null);
   const [editActText, setEditActText] = useState("");
+  const [lightbox, setLightbox] = useState<{ dayId: string; idx: number } | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const photoTargetDay = useRef<string | null>(null);
@@ -354,6 +355,9 @@ export function ItinerarySection({
                         )}
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => setPhotoModalDay(day.id)} title="Añadir fotos" className="p-1.5 rounded-lg text-muted-foreground hover:text-info hover:bg-muted transition-all">
+                          <Plus size={14} />
+                        </button>
                         <button onClick={() => (editingDay === day.id ? saveEditDay() : startEditDay(day))} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
                           {editingDay === day.id ? <Save size={14} /> : <Edit2 size={14} />}
                         </button>
@@ -392,30 +396,26 @@ export function ItinerarySection({
                       )}
 
                       {/* Photo gallery */}
-                      <div className="grid grid-cols-4 gap-1.5 mt-4" style={{ gridAutoRows: "72px" }}>
-                        {photos.map((p, idx) => (
-                          <div
-                            key={idx}
-                            className="relative group/photo overflow-hidden rounded-lg bg-muted"
-                            style={photoSpan(idx, photos.length)}
-                          >
-                            <img src={p} alt="" className="w-full h-full object-cover" />
-                            <button
-                              onClick={() => removePhoto(day.id, idx)}
-                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-all"
+                      {photos.length > 0 && (
+                        <div className="grid grid-cols-4 gap-1.5 mt-4" style={{ gridAutoRows: "130px" }}>
+                          {photos.map((p, idx) => (
+                            <div
+                              key={idx}
+                              className="relative group/photo overflow-hidden rounded-lg bg-muted cursor-zoom-in"
+                              style={photoSpan(idx, photos.length)}
+                              onClick={() => setLightbox({ dayId: day.id, idx })}
                             >
-                              <X size={10} />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => setPhotoModalDay(day.id)}
-                          className="rounded-lg border border-dashed border-border text-muted-foreground hover:text-info hover:border-info/50 transition-colors flex items-center justify-center"
-                          style={photos.length === 0 ? { gridColumn: "span 2", gridRow: "span 2" } : undefined}
-                        >
-                          <Camera size={photos.length === 0 ? 20 : 14} />
-                        </button>
-                      </div>
+                              <img src={p} alt="" className="w-full h-full object-cover" />
+                              <button
+                                onClick={(e) => { e.stopPropagation(); removePhoto(day.id, idx); }}
+                                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-all"
+                              >
+                                <X size={10} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       {tours.filter((t) => t.dayId === day.id).length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-4">
@@ -567,6 +567,36 @@ export function ItinerarySection({
           </div>
         </div>
       )}
+
+      {lightbox && (() => {
+        const lbPhotos = days.find((d) => d.id === lightbox.dayId)?.photos ?? [];
+        if (!lbPhotos.length) return null;
+        const idx = Math.min(lightbox.idx, lbPhotos.length - 1);
+        return (
+          <div className="fixed inset-0 z-[110] bg-black/90 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+            <button onClick={() => setLightbox(null)} className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
+              <X size={22} />
+            </button>
+            {lbPhotos.length > 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox({ dayId: lightbox.dayId, idx: (idx - 1 + lbPhotos.length) % lbPhotos.length }); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors"
+              >
+                <ChevronLeft size={28} />
+              </button>
+            )}
+            <img src={lbPhotos[idx]} alt="" className="max-w-full max-h-full object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
+            {lbPhotos.length > 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox({ dayId: lightbox.dayId, idx: (idx + 1) % lbPhotos.length }); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors"
+              >
+                <ChevronRight size={28} />
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       {itin && (
         <div className="px-4 max-w-4xl mx-auto mt-6 flex gap-2">

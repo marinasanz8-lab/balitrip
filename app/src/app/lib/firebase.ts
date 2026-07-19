@@ -52,10 +52,19 @@ export function isSynced(): boolean {
 export function useSyncedValue<T>(path: string, localKey: string, initial: T): [T, (updater: T | ((prev: T) => T)) => void, boolean] {
   const database = getDb();
 
+  // Remembers the exact JSON this device had in localStorage *before* the
+  // first server snapshot arrives, so a reload can't silently discard a
+  // just-made edit whose write to Firebase hadn't finished yet — only set
+  // when this device genuinely already had synced state, never for a
+  // brand-new device falling back to `initial`.
+  const initialLocalJson = useRef<string | null>(null);
   const [value, setValue] = useState<T>(() => {
     try {
       const s = localStorage.getItem(localKey);
-      if (s) return JSON.parse(s) as T;
+      if (s) {
+        initialLocalJson.current = s;
+        return JSON.parse(s) as T;
+      }
     } catch {}
     return initial;
   });
@@ -68,18 +77,33 @@ export function useSyncedValue<T>(path: string, localKey: string, initial: T): [
       return;
     }
     const r = ref(database, path);
+    let isFirstSnapshot = true;
     const unsub = onValue(
       r,
       (snap) => {
         const v = snap.val();
-        if (v !== null && v !== undefined) {
-          remoteJson.current = JSON.stringify(v);
-          setValue(v as T);
-          try { localStorage.setItem(localKey, remoteJson.current); } catch {}
-        } else {
-          remoteJson.current = "null";
+        const incomingJson = v !== null && v !== undefined ? JSON.stringify(v) : "null";
+
+        if (isFirstSnapshot) {
+          isFirstSnapshot = false;
+          setReady(true);
+          const hadLocal = initialLocalJson.current !== null;
+          if (hadLocal && incomingJson !== initialLocalJson.current) {
+            // This device already had its own state and the server's
+            // current value disagrees — trust the local copy (it may hold
+            // an edit that hadn't round-tripped yet) and push it back up
+            // rather than reverting to what's on the server.
+            remoteJson.current = initialLocalJson.current as string;
+            set(r, JSON.parse(initialLocalJson.current as string)).catch((err) => console.error("Firebase reconcile failed:", err));
+            return;
+          }
         }
-        setReady(true);
+
+        remoteJson.current = incomingJson;
+        if (v !== null && v !== undefined) {
+          setValue(v as T);
+          try { localStorage.setItem(localKey, incomingJson); } catch {}
+        }
       },
       () => setReady(true)
     );
@@ -94,7 +118,7 @@ export function useSyncedValue<T>(path: string, localKey: string, initial: T): [
       try { localStorage.setItem(localKey, json); } catch {}
       if (database && json !== remoteJson.current) {
         remoteJson.current = json;
-        set(ref(database, path), next).catch(() => {});
+        set(ref(database, path), next).catch((err) => console.error("Firebase write failed:", err));
       }
       return next;
     });
