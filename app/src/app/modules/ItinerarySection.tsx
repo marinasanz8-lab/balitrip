@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Compass, Edit2, Plus, Save, Trash2, User, X } from "lucide-react";
 import { SectionHeader } from "./shared";
-import { fileToResizedDataUrl, uid } from "../lib/util";
+import { dayLabelAt, fileToResizedDataUrl, tripLengthDays, uid } from "../lib/util";
 import { ZONE_COLORS, TRIP_EMOJIS, type Activity, type Day, type Itinerary, type Tour, type Zone } from "../types";
 
 function compactDate(day: Day): string {
@@ -56,6 +56,7 @@ export function ItinerarySection({
   const [newZoneName, setNewZoneName] = useState("");
   const [zonesModalOpen, setZonesModalOpen] = useState(false);
   const [confirmDeleteZone, setConfirmDeleteZone] = useState<number | null>(null);
+  const [zoneDateDraft, setZoneDateDraft] = useState<Record<string, { start: string; end: string }>>({});
   const [renamingIdx, setRenamingIdx] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [editingDay, setEditingDay] = useState<string | null>(null);
@@ -262,10 +263,31 @@ export function ItinerarySection({
     });
   };
 
+  /** Fills in the empty days for a date range inside one zone — used to lay
+   * out a zone's schedule up front. Never touches a date that already has a
+   * day somewhere in this itinerary (in this zone or another one), so it's
+   * safe to run repeatedly without duplicating or overwriting content. */
+  const applyZoneDates = (zoneIdx: number, startISO: string, endISO: string) => {
+    if (!startISO || !endISO || startISO > endISO) return;
+    const existingDates = new Set(zones.flatMap((z) => z.days.map((d) => d.date).filter(Boolean)));
+    const n = tripLengthDays(startISO, endISO);
+    const newDays: Day[] = [];
+    for (let offset = 0; offset < n; offset++) {
+      const { iso, label } = dayLabelAt(startISO, offset);
+      if (existingDates.has(iso)) continue;
+      newDays.push({ id: uid(), label, date: iso, activities: [] });
+    }
+    if (newDays.length === 0) return;
+    setZones((zs) => zs.map((z, i) => (i === zoneIdx ? { ...z, days: [...z.days, ...newDays].sort((a, b) => daySortKey(a) - daySortKey(b)) } : z)));
+    const zoneId = zones[zoneIdx]?.id;
+    if (zoneId) setZoneDateDraft((p) => ({ ...p, [zoneId]: { start: "", end: "" } }));
+  };
+
   const closeZonesModal = () => {
     setZonesModalOpen(false);
     setConfirmDeleteZone(null);
     setNewZoneName("");
+    setZoneDateDraft({});
   };
 
   useEffect(() => {
@@ -603,6 +625,32 @@ export function ItinerarySection({
                         </div>
                       )}
                     </div>
+
+                    {confirmDeleteZone !== i && (
+                      <div className="flex items-center gap-1.5 px-3 pb-2.5 border-t border-border/60 pt-2">
+                        <input
+                          type="date"
+                          value={zoneDateDraft[z.id]?.start ?? ""}
+                          onChange={(e) => setZoneDateDraft((p) => ({ ...p, [z.id]: { start: e.target.value, end: p[z.id]?.end ?? "" } }))}
+                          className="text-xs bg-card border border-border rounded-lg px-2 py-1.5 outline-none flex-1 min-w-0"
+                        />
+                        <span className="text-xs text-muted-foreground flex-shrink-0">→</span>
+                        <input
+                          type="date"
+                          value={zoneDateDraft[z.id]?.end ?? ""}
+                          onChange={(e) => setZoneDateDraft((p) => ({ ...p, [z.id]: { start: p[z.id]?.start ?? "", end: e.target.value } }))}
+                          className="text-xs bg-card border border-border rounded-lg px-2 py-1.5 outline-none flex-1 min-w-0"
+                        />
+                        <button
+                          onClick={() => applyZoneDates(i, zoneDateDraft[z.id]?.start ?? "", zoneDateDraft[z.id]?.end ?? "")}
+                          disabled={!zoneDateDraft[z.id]?.start || !zoneDateDraft[z.id]?.end}
+                          title="Crea los días vacíos de este rango en la zona (no toca fechas ya usadas)"
+                          className="text-xs font-medium px-2.5 py-1.5 rounded-lg text-info hover:bg-info/10 disabled:opacity-30 disabled:pointer-events-none transition-colors flex-shrink-0 whitespace-nowrap"
+                        >
+                          Crear días
+                        </button>
+                      </div>
+                    )}
 
                     {confirmDeleteZone !== i && z.days.length > 0 && (
                       <ul className="border-t border-border/60">
