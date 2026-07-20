@@ -233,6 +233,35 @@ export function ItinerarySection({
     setConfirmDeleteZone(null);
   };
 
+  const moveZone = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= zones.length) return;
+    setZones((zs) => {
+      const arr = [...zs];
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      return arr;
+    });
+    setActiveZone((prev) => (prev === i ? j : prev === j ? i : prev));
+  };
+
+  const moveDayToZone = (dayId: string, fromZoneIdx: number, toZoneIdx: number) => {
+    if (fromZoneIdx === toZoneIdx) return;
+    setZones((zs) => {
+      const day = zs[fromZoneIdx]?.days.find((d) => d.id === dayId);
+      if (!day) return zs;
+      const key = daySortKey(day);
+      return zs.map((z, idx) => {
+        if (idx === fromZoneIdx) return { ...z, days: z.days.filter((d) => d.id !== dayId) };
+        if (idx === toZoneIdx) {
+          const insertAt = z.days.findIndex((d) => daySortKey(d) > key);
+          const days = insertAt === -1 ? [...z.days, day] : [...z.days.slice(0, insertAt), day, ...z.days.slice(insertAt)];
+          return { ...z, days };
+        }
+        return z;
+      });
+    });
+  };
+
   const closeZonesModal = () => {
     setZonesModalOpen(false);
     setConfirmDeleteZone(null);
@@ -541,27 +570,60 @@ export function ItinerarySection({
             {zones.length > 0 ? (
               <ul className="space-y-2 mb-4">
                 {zones.map((z, i) => (
-                  <li key={z.id} className="bg-muted rounded-xl px-3 py-2.5">
-                    {confirmDeleteZone === i ? (
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          ¿Eliminar «{z.name}» y sus {z.days.length} día{z.days.length !== 1 ? "s" : ""}?
-                        </span>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <button onClick={() => delZone(i)} className="text-xs font-medium text-destructive hover:opacity-70 transition-opacity">Eliminar</button>
-                          <button onClick={() => setConfirmDeleteZone(null)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
+                  <li key={z.id} className="bg-muted rounded-xl overflow-hidden">
+                    <div className="px-3 py-2.5">
+                      {confirmDeleteZone === i ? (
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            ¿Eliminar «{z.name}» y sus {z.days.length} día{z.days.length !== 1 ? "s" : ""}?
+                          </span>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <button onClick={() => delZone(i)} className="text-xs font-medium text-destructive hover:opacity-70 transition-opacity">Eliminar</button>
+                            <button onClick={() => setConfirmDeleteZone(null)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium flex items-center gap-1.5">
-                          <span>{z.emoji}</span> {z.name}
-                          <span className="text-[11px] text-muted-foreground font-normal">({z.days.length} día{z.days.length !== 1 ? "s" : ""})</span>
-                        </span>
-                        <button onClick={() => setConfirmDeleteZone(i)} className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center flex-shrink-0">
+                            <button onClick={() => moveZone(i, -1)} disabled={i === 0} title="Subir zona" className="text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:pointer-events-none transition-colors p-0.5">
+                              <ChevronUp size={13} />
+                            </button>
+                            <button onClick={() => moveZone(i, 1)} disabled={i === zones.length - 1} title="Bajar zona" className="text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:pointer-events-none transition-colors p-0.5">
+                              <ChevronDown size={13} />
+                            </button>
+                          </div>
+                          <span className="text-sm font-medium flex items-center gap-1.5 flex-1 min-w-0">
+                            <span className="flex-shrink-0">{z.emoji}</span>
+                            <span className="truncate">{z.name}</span>
+                            <span className="text-[11px] text-muted-foreground font-normal flex-shrink-0">({z.days.length} día{z.days.length !== 1 ? "s" : ""})</span>
+                          </span>
+                          <button onClick={() => setConfirmDeleteZone(i)} className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {confirmDeleteZone !== i && z.days.length > 0 && (
+                      <ul className="border-t border-border/60">
+                        {z.days.map((d) => (
+                          <li key={d.id} className="flex items-center justify-between gap-2 pl-9 pr-3 py-1.5">
+                            <span className="text-xs text-muted-foreground truncate">{compactDate(d)}{d.title ? ` · ${d.title}` : ""}</span>
+                            {zones.length > 1 && (
+                              <select
+                                value={i}
+                                title="Mover día a otra zona"
+                                onChange={(e) => moveDayToZone(d.id, i, Number(e.target.value))}
+                                className="text-[11px] bg-transparent text-muted-foreground hover:text-foreground outline-none cursor-pointer flex-shrink-0 max-w-[40%]"
+                              >
+                                {zones.map((zz, zi) => (
+                                  <option key={zz.id} value={zi}>{zz.emoji} {zz.name}</option>
+                                ))}
+                              </select>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
                     )}
                   </li>
                 ))}
