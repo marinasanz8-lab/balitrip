@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Calendar, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Compass, Edit2, Plus, Save, Trash2, User, X } from "lucide-react";
 import { SectionHeader } from "./shared";
 import { dayLabelAt, fileToResizedDataUrl, tripLengthDays, uid } from "../lib/util";
-import { ZONE_COLORS, TRIP_EMOJIS, type Activity, type Day, type Itinerary, type Tour, type Zone } from "../types";
+import { ZONE_COLORS, type Activity, type Day, type Itinerary, type Tour, type Zone } from "../types";
 
 function compactDate(day: Day): string {
   if (day.date) {
@@ -10,6 +10,13 @@ function compactDate(day: Day): string {
     return d.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit" });
   }
   return day.label;
+}
+
+/** The span of dates a zone's days already cover, so reopening its date
+ * picker shows what was actually saved instead of starting empty. */
+function zoneDateRange(z: Zone): { start: string; end: string } {
+  const dates = z.days.map((d) => d.date).filter((d): d is string => !!d).sort();
+  return dates.length > 0 ? { start: dates[0], end: dates[dates.length - 1] } : { start: "", end: "" };
 }
 
 const MONTH_ABBR: Record<string, number> = {
@@ -154,7 +161,7 @@ export function ItinerarySection({
   const zone = zones[activeZone];
   const color = ZONE_COLORS[activeZone % ZONE_COLORS.length];
   const days = zone?.days ?? [];
-  const allDayOptions = zones.flatMap((z) => z.days.map((d) => ({ id: d.id, label: `${z.emoji} ${z.name} · ${d.label}` })));
+  const allDayOptions = zones.flatMap((z) => z.days.map((d) => ({ id: d.id, label: `${z.name} · ${d.label}` })));
   const modalPhotos = days.find((d) => d.id === photoModalDay)?.photos ?? [];
 
   // Sets zones only within the currently active itinerary.
@@ -292,8 +299,7 @@ export function ItinerarySection({
   const addZone = () => {
     const name = newZoneName.trim();
     if (!name) return;
-    const emoji = TRIP_EMOJIS[zones.length % TRIP_EMOJIS.length];
-    setZones((zs) => [...zs, { id: uid(), name, emoji, days: [] }]);
+    setZones((zs) => [...zs, { id: uid(), name, emoji: "", days: [] }]);
     setNewZoneName("");
     setActiveZone(zones.length);
   };
@@ -462,7 +468,6 @@ export function ItinerarySection({
                       className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all"
                       style={{ backgroundColor: isActive ? col : "var(--muted)", color: isActive ? "#fff" : "var(--muted-foreground)" }}
                     >
-                      <span className="text-base">{z.emoji}</span>
                       <span className="whitespace-nowrap">{z.name}</span>
                     </button>
                   );
@@ -660,7 +665,9 @@ export function ItinerarySection({
 
             {zones.length > 0 ? (
               <ul className="space-y-2 mb-4">
-                {zones.map((z, i) => (
+                {zones.map((z, i) => {
+                  const displayRange = zoneDateDraft[z.id] ?? zoneDateRange(z);
+                  return (
                   <li key={z.id} className="bg-muted rounded-xl overflow-hidden">
                     <div className="px-3 py-2.5">
                       {confirmDeleteZone === i ? (
@@ -684,7 +691,6 @@ export function ItinerarySection({
                             </button>
                           </div>
                           <span className="text-sm font-medium flex items-center gap-1.5 flex-1 min-w-0">
-                            <span className="flex-shrink-0">{z.emoji}</span>
                             <span className="truncate">{z.name}</span>
                             <span className="text-[11px] text-muted-foreground font-normal flex-shrink-0">({z.days.length} día{z.days.length !== 1 ? "s" : ""})</span>
                           </span>
@@ -699,12 +705,15 @@ export function ItinerarySection({
                       <div className="px-3 pb-2.5 border-t border-border/60 pt-2">
                         <button
                           type="button"
-                          onClick={() => setOpenDatePicker(z.id)}
+                          onClick={() => {
+                            setZoneDateDraft((p) => (p[z.id] ? p : { ...p, [z.id]: zoneDateRange(z) }));
+                            setOpenDatePicker(z.id);
+                          }}
                           className="w-full flex items-center justify-between gap-1.5 text-xs bg-card border border-border rounded-lg px-2.5 py-1.5"
                         >
-                          <span className={zoneDateDraft[z.id]?.start ? "text-foreground truncate" : "text-muted-foreground truncate"}>
-                            {zoneDateDraft[z.id]?.start
-                              ? `${formatShortDate(zoneDateDraft[z.id].start)}${zoneDateDraft[z.id]?.end ? ` → ${formatShortDate(zoneDateDraft[z.id].end)}` : ""}`
+                          <span className={displayRange.start ? "text-foreground truncate" : "text-muted-foreground truncate"}>
+                            {displayRange.start
+                              ? `${formatShortDate(displayRange.start)}${displayRange.end ? ` → ${formatShortDate(displayRange.end)}` : ""}`
                               : "Elegir fechas"}
                           </span>
                           <Calendar size={12} className="text-muted-foreground flex-shrink-0" />
@@ -712,7 +721,8 @@ export function ItinerarySection({
                       </div>
                     )}
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             ) : (
               <p className="text-xs text-muted-foreground mb-4">Aún no hay zonas o etapas.</p>
@@ -742,7 +752,7 @@ export function ItinerarySection({
       {openDatePicker && (() => {
         const z = zones.find((zz) => zz.id === openDatePicker);
         if (!z) return null;
-        const draft = zoneDateDraft[z.id] ?? { start: "", end: "" };
+        const draft = zoneDateDraft[z.id] ?? zoneDateRange(z);
         return (
           <div className="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpenDatePicker(null)}>
             <div className="bg-card border border-border rounded-2xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
