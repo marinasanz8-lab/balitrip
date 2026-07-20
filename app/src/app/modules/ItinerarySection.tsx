@@ -60,8 +60,14 @@ function DateRangeCalendar({ start, end, onChange }: { start: string; end: strin
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const toIso = (day: number) => `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
+  // Once both ends are picked the range is locked — an extra tap (e.g. while
+  // scrolling back through the calendar to double-check) used to silently
+  // discard it and start a new one from that day, which is how a chosen
+  // range could end up different from what was actually saved. Clearing via
+  // the modal's own "Limpiar" button is now the only way to change it.
   const pick = (iso: string) => {
-    if (!start || (start && end)) onChange(iso, "");
+    if (start && end) return;
+    if (!start) onChange(iso, "");
     else if (iso < start) onChange(iso, start);
     else onChange(start, iso);
   };
@@ -306,24 +312,6 @@ export function ItinerarySection({
       return arr;
     });
     setActiveZone((prev) => (prev === i ? j : prev === j ? i : prev));
-  };
-
-  const moveDayToZone = (dayId: string, fromZoneIdx: number, toZoneIdx: number) => {
-    if (fromZoneIdx === toZoneIdx) return;
-    setZones((zs) => {
-      const day = zs[fromZoneIdx]?.days.find((d) => d.id === dayId);
-      if (!day) return zs;
-      const key = daySortKey(day);
-      return zs.map((z, idx) => {
-        if (idx === fromZoneIdx) return { ...z, days: z.days.filter((d) => d.id !== dayId) };
-        if (idx === toZoneIdx) {
-          const insertAt = z.days.findIndex((d) => daySortKey(d) > key);
-          const days = insertAt === -1 ? [...z.days, day] : [...z.days.slice(0, insertAt), day, ...z.days.slice(insertAt)];
-          return { ...z, days };
-        }
-        return z;
-      });
-    });
   };
 
   /** Fills in the empty days for a date range inside one zone — used to lay
@@ -723,28 +711,6 @@ export function ItinerarySection({
                         </button>
                       </div>
                     )}
-
-                    {confirmDeleteZone !== i && z.days.length > 0 && (
-                      <ul className="border-t border-border/60">
-                        {z.days.map((d) => (
-                          <li key={d.id} className="flex items-center justify-between gap-2 pl-9 pr-3 py-1.5">
-                            <span className="text-xs text-muted-foreground truncate">{compactDate(d)}{d.title ? ` · ${d.title}` : ""}</span>
-                            {zones.length > 1 && (
-                              <select
-                                value={i}
-                                title="Mover día a otra zona"
-                                onChange={(e) => moveDayToZone(d.id, i, Number(e.target.value))}
-                                className="text-[11px] bg-transparent text-muted-foreground hover:text-foreground outline-none cursor-pointer flex-shrink-0 max-w-[40%]"
-                              >
-                                {zones.map((zz, zi) => (
-                                  <option key={zz.id} value={zi}>{zz.emoji} {zz.name}</option>
-                                ))}
-                              </select>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
                   </li>
                 ))}
               </ul>
@@ -791,7 +757,11 @@ export function ItinerarySection({
                 end={draft.end}
                 onChange={(s, e2) => setZoneDateDraft((p) => ({ ...p, [z.id]: { start: s, end: e2 } }))}
               />
-              <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">Los días vacíos de este rango se crean al pulsar Guardar.</p>
+              <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
+                {draft.start && draft.end
+                  ? "Rango fijado — pulsa Limpiar para elegir otro. Los días vacíos se crean al pulsar Guardar."
+                  : "Toca el primer y el último día del rango. Los días vacíos se crean al pulsar Guardar."}
+              </p>
               <div className="flex gap-2 mt-2">
                 <button
                   type="button"
