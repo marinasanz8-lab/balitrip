@@ -32,7 +32,11 @@ export function BudgetSection({
       const next = typeof v === "function" ? (v as (p: Person[]) => Person[])(prev) : v;
       const remainingIds = new Set(next.map((p) => p.id));
       const removedIds = new Set(prev.filter((p) => !remainingIds.has(p.id)).map((p) => p.id));
-      if (removedIds.size > 0) setItems((its) => its.map((i) => (i.paidBy && removedIds.has(i.paidBy) ? { ...i, paidBy: undefined } : i)));
+      if (removedIds.size > 0) setItems((its) => its.map((i) => {
+        if (!i.paidBy || !removedIds.has(i.paidBy)) return i;
+        const { paidBy: _paidBy, ...rest } = i;
+        return rest as BudgetItem;
+      }));
       return next;
     });
   };
@@ -44,11 +48,10 @@ export function BudgetSection({
   const add = () => {
     const amount = parseFloat(form.amount);
     if (!form.desc.trim() || isNaN(amount) || amount <= 0) return;
-    setItems((its) => [...its, {
-      id: uid(), desc: form.desc.trim(), cat: form.cat, zone: form.zone, amount,
-      paidBy: form.paidBy || undefined,
-      splitAmong: form.splitAmong.length > 0 ? form.splitAmong : undefined,
-    }]);
+    const item: BudgetItem = { id: uid(), desc: form.desc.trim(), cat: form.cat, zone: form.zone, amount };
+    if (form.paidBy) item.paidBy = form.paidBy;
+    if (form.splitAmong.length > 0) item.splitAmong = form.splitAmong;
+    setItems((its) => [...its, item]);
     setForm((p) => ({ ...p, desc: "", amount: "", splitAmong: [] }));
   };
 

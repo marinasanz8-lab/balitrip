@@ -45,6 +45,19 @@ export function isSynced(): boolean {
   return !!getDb();
 }
 
+/** Firebase's set() validates its argument and throws *synchronously* (not
+ * as a rejected promise) if the value tree contains an explicit `undefined`
+ * anywhere — a `.catch()` alone doesn't protect against that. Wrapping every
+ * call here means a stray undefined can never interrupt the surrounding
+ * local-state/localStorage handling, only fail to sync that one write. */
+function safeSet(r: ReturnType<typeof ref>, value: unknown) {
+  try {
+    set(r, value).catch((err) => console.error("Firebase write failed:", err));
+  } catch (err) {
+    console.error("Firebase write failed (sync):", err);
+  }
+}
+
 /** Syncs a JSON-serializable value to Firebase Realtime Database (when
  * configured) with a localStorage mirror as offline cache / no-Firebase
  * fallback. Local writes always win immediately; remote updates from other
@@ -94,7 +107,7 @@ export function useSyncedValue<T>(path: string, localKey: string, initial: T): [
             // an edit that hadn't round-tripped yet) and push it back up
             // rather than reverting to what's on the server.
             remoteJson.current = initialLocalJson.current as string;
-            set(r, JSON.parse(initialLocalJson.current as string)).catch((err) => console.error("Firebase reconcile failed:", err));
+            safeSet(r, JSON.parse(initialLocalJson.current as string));
             return;
           }
         }
@@ -118,7 +131,7 @@ export function useSyncedValue<T>(path: string, localKey: string, initial: T): [
       try { localStorage.setItem(localKey, json); } catch {}
       if (database && json !== remoteJson.current) {
         remoteJson.current = json;
-        set(ref(database, path), next).catch((err) => console.error("Firebase write failed:", err));
+        safeSet(ref(database, path), next);
       }
       return next;
     });
