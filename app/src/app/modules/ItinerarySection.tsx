@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Compass, Edit2, Plus, Save, Trash2, User, X } from "lucide-react";
+import { Calendar, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Compass, Edit2, Plus, Save, Trash2, User, X } from "lucide-react";
 import { SectionHeader } from "./shared";
 import { dayLabelAt, fileToResizedDataUrl, tripLengthDays, uid } from "../lib/util";
 import { ZONE_COLORS, TRIP_EMOJIS, type Activity, type Day, type Itinerary, type Tour, type Zone } from "../types";
@@ -40,6 +40,68 @@ function daySortKey(day: Day): number {
   return monthNum * 100 + dayNum;
 }
 
+const WEEKDAY_HEADERS = ["L", "M", "X", "J", "V", "S", "D"];
+
+function formatShortDate(iso: string): string {
+  const d = new Date(iso + "T00:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  return d.charAt(0).toUpperCase() + d.slice(1);
+}
+
+/** One-calendar start→end range picker: first click sets the start, the
+ * next click sets the end (or, if it lands before the start, swaps so the
+ * range still reads forward), and a third click starts a fresh range. */
+function DateRangeCalendar({ start, end, onChange }: { start: string; end: string; onChange: (start: string, end: string) => void }) {
+  const anchor = start || end || new Date().toISOString().slice(0, 10);
+  const [viewYear, setViewYear] = useState(() => Number(anchor.slice(0, 4)));
+  const [viewMonth, setViewMonth] = useState(() => Number(anchor.slice(5, 7)) - 1);
+
+  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+  const startWeekday = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7; // Monday-first
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const toIso = (day: number) => `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+  const pick = (iso: string) => {
+    if (!start || (start && end)) onChange(iso, "");
+    else if (iso < start) onChange(iso, start);
+    else onChange(start, iso);
+  };
+
+  const prevMonth = () => { if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); } else setViewMonth((m) => m - 1); };
+  const nextMonth = () => { if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); } else setViewMonth((m) => m + 1); };
+
+  const cells: (number | null)[] = [...Array(startWeekday).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-3 w-64 shadow-lg">
+      <div className="flex items-center justify-between mb-2">
+        <button type="button" onClick={prevMonth} className="p-1 text-muted-foreground hover:text-foreground transition-colors"><ChevronLeft size={14} /></button>
+        <span className="text-xs font-medium capitalize">{monthLabel}</span>
+        <button type="button" onClick={nextMonth} className="p-1 text-muted-foreground hover:text-foreground transition-colors"><ChevronRight size={14} /></button>
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 text-center">
+        {WEEKDAY_HEADERS.map((d, i) => <span key={i} className="text-[9px] text-muted-foreground py-1">{d}</span>)}
+        {cells.map((day, i) => {
+          if (day === null) return <span key={i} />;
+          const iso = toIso(day);
+          const isStart = iso === start;
+          const isEnd = iso === end;
+          const inRange = !!start && !!end && iso > start && iso < end;
+          return (
+            <button
+              type="button" key={i} onClick={() => pick(iso)}
+              className={`text-[11px] py-1.5 rounded-lg transition-colors ${
+                isStart || isEnd ? "bg-primary text-primary-foreground font-semibold" : inRange ? "bg-info/15 text-foreground" : "hover:bg-muted text-foreground"
+              }`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function ItinerarySection({
   itineraries,
   setItineraries,
@@ -57,6 +119,7 @@ export function ItinerarySection({
   const [zonesModalOpen, setZonesModalOpen] = useState(false);
   const [confirmDeleteZone, setConfirmDeleteZone] = useState<number | null>(null);
   const [zoneDateDraft, setZoneDateDraft] = useState<Record<string, { start: string; end: string }>>({});
+  const [openDatePicker, setOpenDatePicker] = useState<string | null>(null);
   const [renamingIdx, setRenamingIdx] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [editingDay, setEditingDay] = useState<string | null>(null);
@@ -294,6 +357,7 @@ export function ItinerarySection({
     setConfirmDeleteZone(null);
     setNewZoneName("");
     setZoneDateDraft({});
+    setOpenDatePicker(null);
   };
 
   /** "Guardar" in the zones modal — applies any date range still sitting in
@@ -644,28 +708,57 @@ export function ItinerarySection({
                     </div>
 
                     {confirmDeleteZone !== i && (
-                      <div className="flex items-center gap-1.5 px-3 pb-2.5 border-t border-border/60 pt-2">
-                        <input
-                          type="date"
-                          value={zoneDateDraft[z.id]?.start ?? ""}
-                          onChange={(e) => setZoneDateDraft((p) => ({ ...p, [z.id]: { start: e.target.value, end: p[z.id]?.end ?? "" } }))}
-                          className="text-xs bg-card border border-border rounded-lg px-2 py-1.5 outline-none flex-1 min-w-0"
-                        />
-                        <span className="text-xs text-muted-foreground flex-shrink-0">→</span>
-                        <input
-                          type="date"
-                          value={zoneDateDraft[z.id]?.end ?? ""}
-                          onChange={(e) => setZoneDateDraft((p) => ({ ...p, [z.id]: { start: p[z.id]?.start ?? "", end: e.target.value } }))}
-                          className="text-xs bg-card border border-border rounded-lg px-2 py-1.5 outline-none flex-1 min-w-0"
-                        />
-                        <button
-                          onClick={() => applyZoneDates(i, zoneDateDraft[z.id]?.start ?? "", zoneDateDraft[z.id]?.end ?? "")}
-                          disabled={!zoneDateDraft[z.id]?.start || !zoneDateDraft[z.id]?.end}
-                          title="Crea los días vacíos de este rango en la zona (no toca fechas ya usadas)"
-                          className="text-xs font-medium px-2.5 py-1.5 rounded-lg text-info hover:bg-info/10 disabled:opacity-30 disabled:pointer-events-none transition-colors flex-shrink-0 whitespace-nowrap"
-                        >
-                          Crear días
-                        </button>
+                      <div className="px-3 pb-2.5 border-t border-border/60 pt-2 relative">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setOpenDatePicker((p) => (p === z.id ? null : z.id))}
+                            className="flex-1 min-w-0 flex items-center justify-between gap-1.5 text-xs bg-card border border-border rounded-lg px-2.5 py-1.5"
+                          >
+                            <span className={zoneDateDraft[z.id]?.start ? "text-foreground truncate" : "text-muted-foreground truncate"}>
+                              {zoneDateDraft[z.id]?.start
+                                ? `${formatShortDate(zoneDateDraft[z.id].start)}${zoneDateDraft[z.id]?.end ? ` → ${formatShortDate(zoneDateDraft[z.id].end)}` : ""}`
+                                : "Elegir fechas"}
+                            </span>
+                            <Calendar size={12} className="text-muted-foreground flex-shrink-0" />
+                          </button>
+                          <button
+                            onClick={() => applyZoneDates(i, zoneDateDraft[z.id]?.start ?? "", zoneDateDraft[z.id]?.end ?? "")}
+                            disabled={!zoneDateDraft[z.id]?.start || !zoneDateDraft[z.id]?.end}
+                            title="Crea los días vacíos de este rango en la zona (no toca fechas ya usadas)"
+                            className="text-xs font-medium px-2.5 py-1.5 rounded-lg text-info hover:bg-info/10 disabled:opacity-30 disabled:pointer-events-none transition-colors flex-shrink-0 whitespace-nowrap"
+                          >
+                            Crear días
+                          </button>
+                        </div>
+
+                        {openDatePicker === z.id && (
+                          <div className="absolute z-10 mt-1.5" onClick={(e) => e.stopPropagation()}>
+                            <DateRangeCalendar
+                              start={zoneDateDraft[z.id]?.start ?? ""}
+                              end={zoneDateDraft[z.id]?.end ?? ""}
+                              onChange={(s, e2) => setZoneDateDraft((p) => ({ ...p, [z.id]: { start: s, end: e2 } }))}
+                            />
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                type="button"
+                                onClick={() => setOpenDatePicker(null)}
+                                className="flex-1 text-xs font-medium px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                              >
+                                Listo
+                              </button>
+                              {(zoneDateDraft[z.id]?.start || zoneDateDraft[z.id]?.end) && (
+                                <button
+                                  type="button"
+                                  onClick={() => setZoneDateDraft((p) => ({ ...p, [z.id]: { start: "", end: "" } }))}
+                                  className="text-xs text-muted-foreground hover:text-foreground px-2 transition-colors"
+                                >
+                                  Limpiar
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 

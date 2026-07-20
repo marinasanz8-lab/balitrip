@@ -77,11 +77,14 @@ export function tripLengthDays(startISO: string, endISO: string): number {
   return Math.max(0, Math.round((end - start) / 86400000) + 1);
 }
 
-/** Formats the Nth day (0-indexed) after an ISO start date, e.g. "Lun 14 sept". */
+/** Formats the Nth day (0-indexed) after an ISO start date, e.g. "Lun 14 sept".
+ * Builds the ISO string from the Date's local Y/M/D — not `toISOString()`,
+ * which converts to UTC first and silently rolls the date back a day for
+ * any timezone ahead of UTC (e.g. Spain, UTC+1/+2). */
 export function dayLabelAt(startISO: string, offset: number): { iso: string; label: string } {
   const d = new Date(startISO + "T00:00:00");
   d.setDate(d.getDate() + offset);
-  const iso = d.toISOString().slice(0, 10);
+  const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const raw = d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
   return { iso, label: raw.charAt(0).toUpperCase() + raw.slice(1) };
 }

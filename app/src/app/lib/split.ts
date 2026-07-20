@@ -4,18 +4,26 @@ export type Balance = { personId: string; name: string; net: number };
 export type Settlement = { fromId: string; fromName: string; toId: string; toName: string; amount: number };
 
 /** Net balance per person: positive = the group owes them, negative = they owe the group.
- * Each item's amount is paid in full by `paidBy` and split evenly among `splitAmong`
- * (defaulting to everyone when omitted/empty). Items without a `paidBy` are ignored —
- * they haven't been attributed to anyone yet. */
+ * Each item's amount is paid in full by `paidBy`, then divided among the group —
+ * by the exact per-person amounts in `splitAmounts` when set, otherwise evenly among
+ * `splitAmong` (defaulting to everyone when omitted/empty). Items without a `paidBy`
+ * are ignored — they haven't been attributed to anyone yet. */
 export function computeBalances(items: BudgetItem[], people: Person[]): Balance[] {
   const net = new Map<string, number>(people.map((p) => [p.id, 0]));
 
   for (const item of items) {
     if (!item.paidBy || !net.has(item.paidBy)) continue;
+    net.set(item.paidBy, (net.get(item.paidBy) ?? 0) + item.amount);
+
+    if (item.splitAmounts) {
+      for (const [id, share] of Object.entries(item.splitAmounts)) {
+        if (net.has(id)) net.set(id, (net.get(id) ?? 0) - share);
+      }
+      continue;
+    }
     const among = item.splitAmong && item.splitAmong.length > 0 ? item.splitAmong.filter((id) => net.has(id)) : people.map((p) => p.id);
     if (among.length === 0) continue;
     const share = item.amount / among.length;
-    net.set(item.paidBy, (net.get(item.paidBy) ?? 0) + item.amount);
     for (const id of among) net.set(id, (net.get(id) ?? 0) - share);
   }
 

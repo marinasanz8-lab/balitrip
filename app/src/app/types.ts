@@ -93,6 +93,7 @@ export type BudgetItem = {
   amount: number;
   paidBy?: string; // Person.id
   splitAmong?: string[]; // Person.id[] — omitted/empty means "everyone"
+  splitAmounts?: Record<string, number>; // Person.id -> exact share of `amount`; overrides an even split among splitAmong when present
 };
 
 export type TripMeta = {

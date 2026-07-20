@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Scale, Share2, Trash2, X } from "lucide-react";
+import { Lock, Plus, Scale, Share2, Trash2, Unlock, X } from "lucide-react";
 import { PeopleEditor, SectionHeader } from "./shared";
 import { uid } from "../lib/util";
 import { computeBalances, simplifySettlements } from "../lib/split";
@@ -8,6 +8,24 @@ import { BUDGET_CATS, type BudgetItem, type Person, type Zone } from "../types";
 // Budget amounts are always entered in EUR, regardless of the trip's local
 // destination currency (that's what the Conversor module tracks).
 const SYMBOL = "€";
+
+/** Splits `total` among `ids`, keeping any id present in `locked` at its
+ * fixed amount and dividing the remainder evenly (in whole cents, extra
+ * cents going to the first few) among the rest — so editing one person's
+ * share automatically rebalances only the ones nobody fixed yet. */
+function distributeSplit(ids: string[], total: number, locked: Record<string, number>): Record<string, number> {
+  const lockedSum = ids.reduce((s, id) => s + (locked[id] ?? 0), 0);
+  const unlockedIds = ids.filter((id) => !(id in locked));
+  const remainingCents = Math.max(0, Math.round((total - lockedSum) * 100));
+  const result: Record<string, number> = {};
+  for (const id of ids) if (id in locked) result[id] = locked[id];
+  if (unlockedIds.length > 0) {
+    const base = Math.floor(remainingCents / unlockedIds.length);
+    const extra = remainingCents - base * unlockedIds.length;
+    unlockedIds.forEach((id, i) => { result[id] = (base + (i < extra ? 1 : 0)) / 100; });
+  }
+  return result;
+}
 
 export function BudgetSection({
   items,
@@ -28,6 +46,10 @@ export function BudgetSection({
   const emptyForm = { desc: "", cat: "Hotel", zone: "General", amount: "", paidBy: "", splitAmong: [] as string[] };
   const [form, setForm] = useState(emptyForm);
   const [addOpen, setAddOpen] = useState(false);
+  const [lockedSplits, setLockedSplits] = useState<Record<string, number>>({});
+
+  const amountNum = parseFloat(form.amount) || 0;
+  const splitPreview = useMemo(() => distributeSplit(form.splitAmong, amountNum, lockedSplits), [form.splitAmong, amountNum, lockedSplits]);
 
   // Keep budget items in sync when a person is removed from the trip.
   const setPeopleAndClean = (v: Person[] | ((p: Person[]) => Person[])) => {
@@ -46,9 +68,29 @@ export function BudgetSection({
 
   const toggleSplit = (id: string) => {
     setForm((f) => ({ ...f, splitAmong: f.splitAmong.includes(id) ? f.splitAmong.filter((x) => x !== id) : [...f.splitAmong, id] }));
+    setLockedSplits((p) => {
+      if (!(id in p)) return p;
+      const { [id]: _removed, ...rest } = p;
+      return rest;
+    });
   };
 
-  const openAdd = () => { setForm(emptyForm); setAddOpen(true); };
+  const setPersonAmount = (id: string, valueStr: string) => {
+    const value = Math.max(0, parseFloat(valueStr) || 0);
+    setLockedSplits((p) => ({ ...p, [id]: value }));
+  };
+
+  const toggleLock = (id: string) => {
+    setLockedSplits((p) => {
+      if (id in p) {
+        const { [id]: _removed, ...rest } = p;
+        return rest;
+      }
+      return { ...p, [id]: splitPreview[id] ?? 0 };
+    });
+  };
+
+  const openAdd = () => { setForm(emptyForm); setLockedSplits({}); setAddOpen(true); };
   const closeAdd = () => setAddOpen(false);
 
   const add = () => {
@@ -56,7 +98,10 @@ export function BudgetSection({
     if (!form.desc.trim() || isNaN(amount) || amount <= 0) return;
     const item: BudgetItem = { id: uid(), desc: form.desc.trim(), cat: form.cat, zone: form.zone, amount };
     if (form.paidBy) item.paidBy = form.paidBy;
-    if (form.splitAmong.length > 0) item.splitAmong = form.splitAmong;
+    if (form.splitAmong.length > 0) {
+      item.splitAmong = form.splitAmong;
+      item.splitAmounts = distributeSplit(form.splitAmong, amount, lockedSplits);
+    }
     setItems((its) => [...its, item]);
     setAddOpen(false);
   };
@@ -234,7 +279,7 @@ export function BudgetSection({
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] text-muted-foreground block mb-1">Repartido entre (vacío = todos)</label>
+                    <label className="text-[10px] text-muted-foreground block mb-1">¿Quién ha participado? (vacío = todos)</label>
                     <div className="flex flex-wrap gap-1.5">
                       {people.map((p) => (
                         <button
@@ -246,6 +291,45 @@ export function BudgetSection({
                       ))}
                     </div>
                   </div>
+
+                  {form.splitAmong.length > 0 && (
+                    <div>
+                      <label className="text-[10px] text-muted-foreground block mb-1">Reparto por persona</label>
+                      <div className="space-y-1.5">
+                        {form.splitAmong.map((id) => {
+                          const person = people.find((p) => p.id === id);
+                          if (!person) return null;
+                          const isLocked = id in lockedSplits;
+                          return (
+                            <div key={id} className="flex items-center gap-2 bg-muted rounded-xl pl-3 pr-1.5 py-1.5">
+                              <span className="text-sm flex-1 truncate">{person.name}</span>
+                              <input
+                                type="number" min={0} step="0.01"
+                                value={splitPreview[id] ?? 0}
+                                onChange={(e) => setPersonAmount(id, e.target.value)}
+                                className="w-20 text-sm bg-card border border-border rounded-lg px-2 py-1 outline-none text-right"
+                              />
+                              <span className="text-xs text-muted-foreground">{SYMBOL}</span>
+                              <button
+                                type="button"
+                                onClick={() => toggleLock(id)}
+                                title={isLocked ? "Cantidad fija — pulsa para volver a repartir en partes iguales" : "Se reparte en partes iguales — pulsa para fijar esta cantidad"}
+                                className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${isLocked ? "text-info" : "text-muted-foreground hover:text-foreground"}`}
+                              >
+                                {isLocked ? <Lock size={13} /> : <Unlock size={13} />}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex justify-between text-[11px] px-1 pt-1.5">
+                        <span className="text-muted-foreground">Repartido</span>
+                        <span className={Math.abs(Object.values(splitPreview).reduce((s, v) => s + v, 0) - amountNum) < 0.005 ? "text-muted-foreground" : "text-destructive font-medium"}>
+                          {Object.values(splitPreview).reduce((s, v) => s + v, 0).toFixed(2)} {SYMBOL} de {amountNum.toFixed(2)} {SYMBOL}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
