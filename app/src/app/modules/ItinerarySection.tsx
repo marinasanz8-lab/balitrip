@@ -266,19 +266,25 @@ export function ItinerarySection({
   /** Fills in the empty days for a date range inside one zone — used to lay
    * out a zone's schedule up front. Never touches a date that already has a
    * day somewhere in this itinerary (in this zone or another one), so it's
-   * safe to run repeatedly without duplicating or overwriting content. */
+   * safe to run repeatedly without duplicating or overwriting content.
+   * Reads existing dates from the functional updater's own `zs`, not the
+   * outer `zones` closure, so several calls fired back-to-back (e.g. from
+   * "Guardar" applying every zone's pending range at once) see each other's
+   * just-added days instead of racing on stale state. */
   const applyZoneDates = (zoneIdx: number, startISO: string, endISO: string) => {
     if (!startISO || !endISO || startISO > endISO) return;
-    const existingDates = new Set(zones.flatMap((z) => z.days.map((d) => d.date).filter(Boolean)));
-    const n = tripLengthDays(startISO, endISO);
-    const newDays: Day[] = [];
-    for (let offset = 0; offset < n; offset++) {
-      const { iso, label } = dayLabelAt(startISO, offset);
-      if (existingDates.has(iso)) continue;
-      newDays.push({ id: uid(), label, date: iso, activities: [] });
-    }
-    if (newDays.length === 0) return;
-    setZones((zs) => zs.map((z, i) => (i === zoneIdx ? { ...z, days: [...z.days, ...newDays].sort((a, b) => daySortKey(a) - daySortKey(b)) } : z)));
+    setZones((zs) => {
+      const existingDates = new Set(zs.flatMap((z) => z.days.map((d) => d.date).filter(Boolean)));
+      const n = tripLengthDays(startISO, endISO);
+      const newDays: Day[] = [];
+      for (let offset = 0; offset < n; offset++) {
+        const { iso, label } = dayLabelAt(startISO, offset);
+        if (existingDates.has(iso)) continue;
+        newDays.push({ id: uid(), label, date: iso, activities: [] });
+      }
+      if (newDays.length === 0) return zs;
+      return zs.map((z, i) => (i === zoneIdx ? { ...z, days: [...z.days, ...newDays].sort((a, b) => daySortKey(a) - daySortKey(b)) } : z));
+    });
     const zoneId = zones[zoneIdx]?.id;
     if (zoneId) setZoneDateDraft((p) => ({ ...p, [zoneId]: { start: "", end: "" } }));
   };
@@ -288,6 +294,17 @@ export function ItinerarySection({
     setConfirmDeleteZone(null);
     setNewZoneName("");
     setZoneDateDraft({});
+  };
+
+  /** "Guardar" in the zones modal — applies any date range still sitting in
+   * a zone's inputs (in case Crear días wasn't clicked for it) and then
+   * closes the modal, so the itinerary below reflects every zone's days. */
+  const saveZonesModal = () => {
+    zones.forEach((z, i) => {
+      const draft = zoneDateDraft[z.id];
+      if (draft?.start && draft?.end) applyZoneDates(i, draft.start, draft.end);
+    });
+    closeZonesModal();
   };
 
   useEffect(() => {
@@ -693,6 +710,10 @@ export function ItinerarySection({
                 <Plus size={15} />
               </button>
             </div>
+
+            <button onClick={saveZonesModal} className="w-full mt-4 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium">
+              Guardar
+            </button>
           </div>
         </div>
       )}
