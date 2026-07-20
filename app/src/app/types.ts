@@ -136,7 +136,15 @@ export const EMPTY_TRIP_DATA: TripData = {
  * normalize a nested structure back to always having its array fields. */
 function normalizeDay(raw: unknown): Day {
   const d = (raw ?? {}) as Partial<Day>;
-  return { id: d.id ?? "", label: d.label ?? "", date: d.date, title: d.title, description: d.description, photos: d.photos, activities: Array.isArray(d.activities) ? d.activities : [] };
+  // Firebase's set() throws synchronously if the value tree contains an
+  // explicit `undefined` anywhere, so optional fields must be left off
+  // entirely rather than assigned `field: d.field` when `d.field` is absent.
+  const day: Day = { id: d.id ?? "", label: d.label ?? "", activities: Array.isArray(d.activities) ? d.activities : [] };
+  if (d.date !== undefined) day.date = d.date;
+  if (d.title !== undefined) day.title = d.title;
+  if (d.description !== undefined) day.description = d.description;
+  if (d.photos !== undefined) day.photos = d.photos;
+  return day;
 }
 function normalizeZone(raw: unknown): Zone {
   const z = (raw ?? {}) as Partial<Zone>;
