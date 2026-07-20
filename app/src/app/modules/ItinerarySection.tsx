@@ -59,6 +59,7 @@ export function ItinerarySection({
   const [newActs, setNewActs] = useState<Record<string, string>>({});
   const [newDayLabel, setNewDayLabel] = useState("");
   const [newZoneName, setNewZoneName] = useState("");
+  const [addZoneOpen, setAddZoneOpen] = useState(false);
   const [renamingIdx, setRenamingIdx] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [editingDay, setEditingDay] = useState<string | null>(null);
@@ -230,11 +231,12 @@ export function ItinerarySection({
 
   const addZone = () => {
     const name = newZoneName.trim();
-    if (!name) return;
+    if (!name) { setAddZoneOpen(false); return; }
     const emoji = TRIP_EMOJIS[zones.length % TRIP_EMOJIS.length];
     setZones((zs) => [...zs, { id: uid(), name, emoji, days: [] }]);
     setNewZoneName("");
     setActiveZone(zones.length);
+    setAddZoneOpen(false);
   };
 
   const delZone = (i: number) => {
@@ -329,10 +331,6 @@ export function ItinerarySection({
         <div className="px-4 max-w-4xl mx-auto">
           <div className="text-center py-10 text-muted-foreground text-sm bg-card border border-dashed border-border rounded-2xl mb-4">Crea un itinerario para empezar.</div>
         </div>
-      ) : zones.length === 0 ? (
-        <div className="px-4 max-w-4xl mx-auto">
-          <div className="text-center py-10 text-muted-foreground text-sm bg-card border border-border rounded-2xl mb-4">Aún no hay zonas o etapas añadidas en «{itin.name}».</div>
-        </div>
       ) : (
         <>
           <div className="max-w-4xl mx-auto px-4">
@@ -364,8 +362,32 @@ export function ItinerarySection({
                   </div>
                 );
               })}
+              {addZoneOpen ? (
+                <input
+                  autoFocus
+                  value={newZoneName}
+                  onChange={(e) => setNewZoneName(e.target.value)}
+                  onBlur={addZone}
+                  onKeyDown={(e) => { if (e.key === "Enter") addZone(); if (e.key === "Escape") { setNewZoneName(""); setAddZoneOpen(false); } }}
+                  placeholder="Nombre de la zona"
+                  className="flex-shrink-0 text-sm font-medium px-3.5 py-2 rounded-full bg-muted outline-none ring-2 ring-info w-36"
+                />
+              ) : (
+                <button
+                  onClick={() => setAddZoneOpen(true)}
+                  className="flex-shrink-0 flex items-center gap-1 pl-2.5 pr-3 py-2 rounded-full text-xs font-medium border border-dashed border-border text-muted-foreground hover:text-info hover:border-info/50 transition-colors"
+                >
+                  <Plus size={13} /> Nueva zona
+                </button>
+              )}
             </div>
           </div>
+
+          {zones.length === 0 && (
+            <div className="px-4 max-w-4xl mx-auto mt-4">
+              <div className="text-center py-10 text-muted-foreground text-sm bg-card border border-border rounded-2xl">Aún no hay zonas o etapas añadidas en «{itin.name}».</div>
+            </div>
+          )}
 
           {zone && (
             <div className="px-4 max-w-4xl mx-auto mt-4">
@@ -667,18 +689,6 @@ export function ItinerarySection({
         );
       })()}
 
-      {itin && (
-        <div className="px-4 max-w-4xl mx-auto mt-6 flex gap-2">
-          <input
-            className="flex-1 text-sm bg-muted rounded-xl px-3 py-2.5 outline-none placeholder:text-muted-foreground"
-            placeholder="Nueva zona o etapa (ej. Ubud)"
-            value={newZoneName}
-            onChange={(e) => setNewZoneName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addZone()}
-          />
-          <button onClick={addZone} className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity flex-shrink-0 text-sm font-medium">Añadir zona</button>
-        </div>
-      )}
     </section>
   );
 }
