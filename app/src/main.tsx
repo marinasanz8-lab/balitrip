@@ -10,6 +10,17 @@
   // Hoteles) instead of at the top. Taking manual control here stops that.
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
+  // On iOS/mobile Safari, switching away from the tab (another app, the
+  // tab switcher, a swipe-back gesture) and returning to it usually restores
+  // the page instantly from the back/forward cache instead of reloading it —
+  // React never remounts, so the scroll-to-top-on-navigate effect never
+  // re-runs, and the page reappears exactly as scrolled before. This is the
+  // likely cause of "every time I open it, it's on Hoteles": force the top
+  // whenever a bfcache restore happens.
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) window.scrollTo(0, 0);
+  });
+
   createRoot(document.getElementById("root")!).render(
     <ErrorBoundary>
       <App />
