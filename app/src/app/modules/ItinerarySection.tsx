@@ -40,18 +40,6 @@ function daySortKey(day: Day): number {
   return monthNum * 100 + dayNum;
 }
 
-/** Grid placement for a photo tile in the mosaic, adapted to how many
- * photos the day has — a lone photo goes full-width, a pair sits side by
- * side, a trio is one big tile plus two stacked, four form an even 2×2,
- * and five or more fall back to one hero tile plus a thumbnail strip. */
-function photoSpan(idx: number, total: number): React.CSSProperties | undefined {
-  if (total === 1) return { gridColumn: "span 4", gridRow: "span 2" };
-  if (total === 2) return { gridColumn: "span 2", gridRow: "span 2" };
-  if (total === 3) return idx === 0 ? { gridColumn: "span 2", gridRow: "span 2" } : { gridColumn: "span 2", gridRow: "span 1" };
-  if (total === 4) return { gridColumn: "span 2", gridRow: "span 2" };
-  return idx === 0 ? { gridColumn: "span 2", gridRow: "span 2" } : undefined;
-}
-
 export function ItinerarySection({
   itineraries,
   setItineraries,
@@ -369,26 +357,19 @@ export function ItinerarySection({
           </div>
 
           {zone && (
-            <div className="px-4 max-w-4xl mx-auto mt-6 space-y-5">
-              {days.map((day) => {
+            <div className="px-4 max-w-4xl mx-auto mt-6">
+              {days.map((day, dIdx) => {
                 const photos = day.photos ?? [];
                 return (
-                  <div key={day.id} className="bg-card border border-border rounded-2xl overflow-hidden">
-                    {/* Date + title header */}
-                    <div className="px-5 pt-5 flex items-start gap-3">
+                  <div key={day.id} className={dIdx > 0 ? "pt-8 mt-8 border-t border-border" : ""}>
+                    {/* Row 1: date badge + action icons */}
+                    <div className="flex items-center justify-between gap-3">
                       <span
                         className="text-[11px] font-bold uppercase tracking-wide px-2 py-1 rounded-lg flex-shrink-0"
                         style={{ backgroundColor: color + "18", color }}
                       >
                         {compactDate(day)}
                       </span>
-                      <div className="flex-1 min-w-0">
-                        {day.title ? (
-                          <h3 className="font-bold leading-snug" style={{ fontFamily: "var(--font-display)", fontSize: "1.15rem" }}>{day.title}</h3>
-                        ) : (
-                          <p className="text-sm text-muted-foreground italic">Sin título todavía</p>
-                        )}
-                      </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <button onClick={() => setPhotoModalDay(day.id)} title="Añadir fotos" className="p-1.5 rounded-lg text-muted-foreground hover:text-info hover:bg-muted transition-all">
                           <Plus size={14} />
@@ -402,69 +383,77 @@ export function ItinerarySection({
                       </div>
                     </div>
 
-                    <div className="px-5 pb-5">
-                      {editingDay === day.id ? (
-                        <div className="mt-3 space-y-2">
-                          <input
-                            className="w-full text-sm bg-muted rounded-lg px-3 py-2 outline-none font-medium"
-                            placeholder="Título del día (ej. Cascadas y atardecer en Tanah Lot)"
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                          />
-                          <textarea
-                            className="w-full text-sm bg-muted rounded-lg px-3 py-2 outline-none resize-y leading-relaxed"
-                            rows={5}
-                            placeholder="Describe el plan del día — separa párrafos con una línea en blanco."
-                            value={editDesc}
-                            onChange={(e) => setEditDesc(e.target.value)}
-                          />
-                          <button onClick={() => setEditingDay(null)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
-                        </div>
+                    {/* Row 2: title */}
+                    <div className="mt-2">
+                      {day.title ? (
+                        <h3 className="font-bold leading-snug" style={{ fontFamily: "var(--font-display)", fontSize: "1.15rem" }}>{day.title}</h3>
                       ) : (
-                        day.description && (
-                          <div className="mt-3 space-y-2.5">
-                            {day.description.split(/\n\s*\n/).map((para, i) => (
-                              <p key={i} className="text-sm text-muted-foreground leading-relaxed">{para}</p>
-                            ))}
-                          </div>
-                        )
+                        <p className="text-sm text-muted-foreground italic">Sin título todavía</p>
                       )}
+                    </div>
 
-                      {/* Photo gallery */}
-                      {photos.length > 0 && (
-                        <div className="grid grid-cols-4 gap-1.5 mt-4" style={{ gridAutoRows: "130px" }}>
-                          {photos.map((p, idx) => (
-                            <div
-                              key={idx}
-                              className="relative group/photo overflow-hidden rounded-lg bg-muted cursor-zoom-in"
-                              style={photoSpan(idx, photos.length)}
-                              onClick={() => setLightbox({ dayId: day.id, idx })}
+                    {editingDay === day.id ? (
+                      <div className="mt-3 space-y-2">
+                        <input
+                          className="w-full text-sm bg-muted rounded-lg px-3 py-2 outline-none font-medium"
+                          placeholder="Título del día (ej. Cascadas y atardecer en Tanah Lot)"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                        />
+                        <textarea
+                          className="w-full text-sm bg-muted rounded-lg px-3 py-2 outline-none resize-y leading-relaxed"
+                          rows={5}
+                          placeholder="Describe el plan del día — separa párrafos con una línea en blanco."
+                          value={editDesc}
+                          onChange={(e) => setEditDesc(e.target.value)}
+                        />
+                        <button onClick={() => setEditingDay(null)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
+                      </div>
+                    ) : (
+                      day.description && (
+                        <div className="mt-3 space-y-2.5">
+                          {day.description.split(/\n\s*\n/).map((para, i) => (
+                            <p key={i} className="text-sm text-muted-foreground leading-relaxed">{para}</p>
+                          ))}
+                        </div>
+                      )
+                    )}
+
+                    {/* Photo carousel — square tiles, swipe horizontally */}
+                    {photos.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1 mt-4" style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
+                        {photos.map((p, idx) => (
+                          <div
+                            key={idx}
+                            className="relative group/photo flex-shrink-0 w-36 h-36 sm:w-44 sm:h-44 overflow-hidden rounded-xl bg-muted cursor-zoom-in"
+                            style={{ scrollSnapAlign: "start" }}
+                            onClick={() => setLightbox({ dayId: day.id, idx })}
+                          >
+                            <img src={p} alt="" className="w-full h-full object-cover" />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); removePhoto(day.id, idx); }}
+                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-all"
                             >
-                              <img src={p} alt="" className="w-full h-full object-cover" />
-                              <button
-                                onClick={(e) => { e.stopPropagation(); removePhoto(day.id, idx); }}
-                                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-all"
-                              >
-                                <X size={10} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
-                      {tours.filter((t) => t.dayId === day.id).length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-4">
-                          {tours.filter((t) => t.dayId === day.id).map((t) => (
-                            <span key={t.id} className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full bg-info/10 text-info">
-                              <Compass size={10} /> {t.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                    {tours.filter((t) => t.dayId === day.id).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-4">
+                        {tours.filter((t) => t.dayId === day.id).map((t) => (
+                          <span key={t.id} className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full bg-info/10 text-info">
+                            <Compass size={10} /> {t.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
-                      {/* Quick activities checklist */}
-                      <div className="mt-4 pt-4 border-t border-border">
-                        {day.activities.length > 0 && (
+                    {/* Quick activities checklist */}
+                    <div className="mt-4 pt-4 border-t border-border">
+                      {day.activities.length > 0 && (
                           <ul className="space-y-2 mb-3">
                             {day.activities.map((a, aidx) => (
                               <li key={a.id} className="flex items-start gap-2.5 group">
@@ -526,7 +515,6 @@ export function ItinerarySection({
                             <Plus size={15} />
                           </button>
                         </div>
-                      </div>
                     </div>
                   </div>
                 );
