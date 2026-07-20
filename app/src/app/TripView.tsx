@@ -8,9 +8,10 @@ import { ChecklistSection } from "./modules/ChecklistSection";
 import { FlightsSection } from "./modules/FlightsSection";
 import { HotelsSection } from "./modules/HotelsSection";
 import { ItinerarySection } from "./modules/ItinerarySection";
+import { MapSection } from "./modules/MapSection";
 import { TourSection } from "./modules/TourSection";
 import { BudgetSection } from "./modules/BudgetSection";
-import { MODULE_LABELS, type ModuleId, type TripData, type TripMeta } from "./types";
+import { ALL_MODULES, MODULE_LABELS, type ModuleId, type TripData, type TripMeta } from "./types";
 
 export function TripView({ tripId, onBack, onSettings }: { tripId: string; onBack: () => void; onSettings: () => void }) {
   const { getTripEntry, setTripData } = useWorkspace();
@@ -39,7 +40,10 @@ export function TripView({ tripId, onBack, onSettings }: { tripId: string; onBac
       .catch(() => prompt("Copia este enlace:", url));
   };
 
-  const enabled = meta.modules;
+  // Rendered in a fixed, canonical order (not raw toggle-insertion order) so
+  // e.g. Mapa always lands right after Itinerario regardless of when each
+  // module was switched on.
+  const enabled = ALL_MODULES.filter((m) => meta.modules.includes(m));
   const nav: { id: ModuleId; label: string }[] = enabled.map((m) => ({ id: m, label: MODULE_LABELS[m] }));
 
   const targetTs = meta.startDate ? new Date(meta.startDate + "T00:00:00").getTime() : Date.now();
@@ -169,7 +173,9 @@ function renderModule(
     case "hoteles":
       return <HotelsSection hotels={data.hotels} setHotels={fieldSetter(update, "hotels")} />;
     case "itinerario":
-      return <ItinerarySection itineraries={data.itineraries} setItineraries={fieldSetter(update, "itineraries")} tours={data.tours} destination={meta.destination} />;
+      return <ItinerarySection itineraries={data.itineraries} setItineraries={fieldSetter(update, "itineraries")} tours={data.tours} />;
+    case "mapa":
+      return <MapSection mapEmbedUrl={data.mapEmbedUrl} setMapEmbedUrl={fieldSetter(update, "mapEmbedUrl")} />;
     case "tours":
       return <TourSection tours={data.tours} setTours={fieldSetter(update, "tours")} itineraries={data.itineraries} />;
     case "presupuesto":

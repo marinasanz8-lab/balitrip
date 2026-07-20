@@ -4,6 +4,7 @@ export type ModuleId =
   | "vuelos"
   | "hoteles"
   | "itinerario"
+  | "mapa"
   | "tours"
   | "presupuesto";
 
@@ -13,6 +14,7 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   vuelos: "Vuelos",
   hoteles: "Hoteles",
   itinerario: "Itinerario",
+  mapa: "Mapa",
   tours: "Tours y excursiones",
   presupuesto: "Presupuesto",
 };
@@ -23,6 +25,7 @@ export const ALL_MODULES: ModuleId[] = [
   "vuelos",
   "hoteles",
   "itinerario",
+  "mapa",
   "tours",
   "presupuesto",
 ];
@@ -58,9 +61,7 @@ export type HotelData = {
   bookingLink?: string;
 };
 
-export type GeoPlace = { lat: number; lng: number; label: string };
-/** undefined = never looked up; false = looked up, nothing found. */
-export type Activity = { id: string; text: string; place?: GeoPlace | false };
+export type Activity = { id: string; text: string };
 export type Day = {
   id: string;
   label: string;
@@ -117,6 +118,7 @@ export type TripData = {
   flights: FlightData[];
   hotels: HotelData[];
   itineraries: Itinerary[];
+  mapEmbedUrl?: string;
   tours: Tour[];
   budget: BudgetItem[];
   people: Person[];
@@ -172,7 +174,7 @@ export function normalizeTripData(raw: unknown): TripData {
     : Array.isArray(r.zones) && r.zones.length > 0
     ? [{ id: "legacy", name: "Itinerario", zones: r.zones.map(normalizeZone) }]
     : [];
-  return {
+  const data: TripData = {
     checklist: Array.isArray(r.checklist) ? r.checklist.map(normalizeCheckCat) : [],
     flights: Array.isArray(r.flights) ? r.flights : [],
     hotels: Array.isArray(r.hotels) ? r.hotels : [],
@@ -181,6 +183,8 @@ export function normalizeTripData(raw: unknown): TripData {
     budget: Array.isArray(r.budget) ? r.budget : [],
     people: Array.isArray(r.people) ? r.people : [],
   };
+  if (r.mapEmbedUrl !== undefined) data.mapEmbedUrl = r.mapEmbedUrl;
+  return data;
 }
 
 export const BUDGET_CATS = ["Vuelo", "Hotel", "Traslado", "Excursión", "Comida", "Compras", "Otros"];

@@ -1,10 +1,8 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Compass, Edit2, Map, Plus, Save, Trash2, User, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Compass, Edit2, Plus, Save, Trash2, User, X } from "lucide-react";
 import { SectionHeader } from "./shared";
 import { fileToResizedDataUrl, uid } from "../lib/util";
-import { ZONE_COLORS, TRIP_EMOJIS, type Activity, type Day, type GeoPlace, type Itinerary, type Tour, type Zone } from "../types";
-
-const ItineraryMap = lazy(() => import("./ItineraryMap").then((m) => ({ default: m.ItineraryMap })));
+import { ZONE_COLORS, TRIP_EMOJIS, type Activity, type Day, type Itinerary, type Tour, type Zone } from "../types";
 
 function compactDate(day: Day): string {
   if (day.date) {
@@ -46,16 +44,13 @@ export function ItinerarySection({
   itineraries,
   setItineraries,
   tours = [],
-  destination = "",
 }: {
   itineraries: Itinerary[];
   setItineraries: (v: Itinerary[] | ((p: Itinerary[]) => Itinerary[])) => void;
   tours?: Tour[];
-  destination?: string;
 }) {
   const [activeItin, setActiveItin] = useState(0);
   const [activeZone, setActiveZone] = useState(0);
-  const [mapOpen, setMapOpen] = useState(false);
   const [newActs, setNewActs] = useState<Record<string, string>>({});
   const [newDayLabel, setNewDayLabel] = useState("");
   const [newZoneName, setNewZoneName] = useState("");
@@ -150,12 +145,6 @@ export function ItinerarySection({
     const arr = [...day.activities];
     [arr[idx], arr[swapWith]] = [arr[swapWith], arr[idx]];
     updateDay(did, { activities: arr });
-  };
-
-  const setActivityPlace = (did: string, aid: string, place: GeoPlace | false) => {
-    const day = days.find((d) => d.id === did);
-    if (!day) return;
-    updateDay(did, { activities: day.activities.map((a) => (a.id === aid ? { ...a, place } : a)) });
   };
 
   const moveAct = (fromDayId: string, activityId: string, toDayId: string) => {
@@ -386,28 +375,6 @@ export function ItinerarySection({
           {zones.length === 0 && (
             <div className="px-4 max-w-4xl mx-auto mt-4">
               <div className="text-center py-10 text-muted-foreground text-sm bg-card border border-border rounded-2xl">Aún no hay zonas o etapas añadidas en «{itin.name}».</div>
-            </div>
-          )}
-
-          {zone && (
-            <div className="px-4 max-w-4xl mx-auto mt-4">
-              <button
-                onClick={() => setMapOpen((v) => !v)}
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-info/10 text-info hover:bg-info/20 transition-colors"
-              >
-                <Map size={13} /> {mapOpen ? "Ocultar mapa" : "Ver mapa"}
-              </button>
-              {mapOpen && (
-                <div className="mt-3">
-                  <Suspense fallback={<div className="h-32 bg-muted rounded-2xl animate-pulse" />}>
-                    <ItineraryMap
-                      zone={zone}
-                      geoContext={[zone.name, destination].filter(Boolean).join(", ")}
-                      onSetPlace={setActivityPlace}
-                    />
-                  </Suspense>
-                </div>
-              )}
             </div>
           )}
 
