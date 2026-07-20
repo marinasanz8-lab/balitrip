@@ -12,6 +12,34 @@ function compactDate(day: Day): string {
   return day.label;
 }
 
+const MONTH_ABBR: Record<string, number> = {
+  ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, sep: 9, set: 9, oct: 10, nov: 11, dic: 12,
+};
+// "mar" collides between martes and marzo — skip weekday abbreviations when
+// scanning label tokens for a month name so "Mar 15 Sep" reads September.
+const WEEKDAY_ABBR = new Set(["lun", "mar", "mie", "mié", "jue", "vie", "sab", "sáb", "dom"]);
+
+/** Best-effort chronological key for a day so a newly-added one can be
+ * inserted in the right spot instead of always landing at the end — reads
+ * the ISO `date` when present, otherwise looks for a day-of-month number and
+ * a Spanish month name inside the free-text label (e.g. "Lun 14 Sep" or
+ * just "14"). Days with nothing recognizable sort last. */
+function daySortKey(day: Day): number {
+  if (day.date) return new Date(day.date + "T00:00:00").getTime();
+  const label = day.label.toLowerCase();
+  const dayMatch = label.match(/\d{1,2}/);
+  if (!dayMatch) return Number.MAX_SAFE_INTEGER;
+  const dayNum = parseInt(dayMatch[0], 10);
+  const tokens = label.match(/[a-záéíóúñ]+/g) ?? [];
+  let monthNum = 0;
+  for (const t of tokens) {
+    if (WEEKDAY_ABBR.has(t.slice(0, 3))) continue;
+    const found = MONTH_ABBR[t.slice(0, 3)];
+    if (found !== undefined) { monthNum = found; break; }
+  }
+  return monthNum * 100 + dayNum;
+}
+
 /** Grid placement for a photo tile in the mosaic, adapted to how many
  * photos the day has — a lone photo goes full-width, a pair sits side by
  * side, a trio is one big tile plus two stacked, four form an even 2×2,
@@ -150,7 +178,14 @@ export function ItinerarySection({
   const addDay = () => {
     const label = newDayLabel.trim();
     if (!label) return;
-    setZones((zs) => zs.map((z, i) => (i === activeZone ? { ...z, days: [...z.days, { id: uid(), label, activities: [] }] } : z)));
+    const newDay: Day = { id: uid(), label, activities: [] };
+    const key = daySortKey(newDay);
+    setZones((zs) => zs.map((z, i) => {
+      if (i !== activeZone) return z;
+      const insertAt = z.days.findIndex((d) => daySortKey(d) > key);
+      const days = insertAt === -1 ? [...z.days, newDay] : [...z.days.slice(0, insertAt), newDay, ...z.days.slice(insertAt)];
+      return { ...z, days };
+    }));
     setNewDayLabel("");
     setAddDayOpen(false);
   };
