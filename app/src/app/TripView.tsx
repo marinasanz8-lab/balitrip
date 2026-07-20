@@ -186,7 +186,6 @@ function renderModule(
           people={data.people}
           setPeople={fieldSetter(update, "people")}
           zones={dedupZones(data.itineraries)}
-          currency={meta.currency}
           onShare={onShare}
         />
       );
