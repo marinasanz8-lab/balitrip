@@ -58,31 +58,46 @@ function safeSet(r: ReturnType<typeof ref>, value: unknown) {
   }
 }
 
+type Envelope<T> = { data: T; updatedAt: number };
+
+/** Reads a value out of storage that might be either the new `{data,
+ * updatedAt}` envelope or an older bare value from before this existed.
+ * Bare values are treated as updatedAt 0 so any real timestamped copy —
+ * local or remote — naturally wins the first comparison against them. */
+function toEnvelope<T>(raw: unknown): Envelope<T> | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw === "object" && raw !== null && "updatedAt" in raw && "data" in raw) {
+    return raw as Envelope<T>;
+  }
+  return { data: raw as T, updatedAt: 0 };
+}
+
 /** Syncs a JSON-serializable value to Firebase Realtime Database (when
  * configured) with a localStorage mirror as offline cache / no-Firebase
- * fallback. Local writes always win immediately; remote updates from other
- * devices land via the onValue listener. */
+ * fallback. Every write is stamped with the time it was made, so when a
+ * device reconnects (a plain refresh, or opening the link on a different
+ * device with its own possibly-stale cache) the newer of the two copies —
+ * by that timestamp, not just "whichever was local" — wins instead of
+ * guessing. Remote updates from other devices land via the onValue listener. */
 export function useSyncedValue<T>(path: string, localKey: string, initial: T): [T, (updater: T | ((prev: T) => T)) => void, boolean] {
   const database = getDb();
 
-  // Remembers the exact JSON this device had in localStorage *before* the
-  // first server snapshot arrives, so a reload can't silently discard a
-  // just-made edit whose write to Firebase hadn't finished yet — only set
-  // when this device genuinely already had synced state, never for a
-  // brand-new device falling back to `initial`.
-  const initialLocalJson = useRef<string | null>(null);
+  const initialLocalEnvelope = useRef<Envelope<T> | null>(null);
   const [value, setValue] = useState<T>(() => {
     try {
       const s = localStorage.getItem(localKey);
       if (s) {
-        initialLocalJson.current = s;
-        return JSON.parse(s) as T;
+        const env = toEnvelope<T>(JSON.parse(s));
+        if (env) {
+          initialLocalEnvelope.current = env;
+          return env.data;
+        }
       }
     } catch {}
     return initial;
   });
   const [ready, setReady] = useState(!database);
-  const remoteJson = useRef<string | null>(null);
+  const remoteEnvelopeJson = useRef<string | null>(null);
 
   useEffect(() => {
     if (!database) {
@@ -94,28 +109,26 @@ export function useSyncedValue<T>(path: string, localKey: string, initial: T): [
     const unsub = onValue(
       r,
       (snap) => {
-        const v = snap.val();
-        const incomingJson = v !== null && v !== undefined ? JSON.stringify(v) : "null";
+        const remoteEnv = toEnvelope<T>(snap.val());
 
         if (isFirstSnapshot) {
           isFirstSnapshot = false;
           setReady(true);
-          const hadLocal = initialLocalJson.current !== null;
-          if (hadLocal && incomingJson !== initialLocalJson.current) {
-            // This device already had its own state and the server's
-            // current value disagrees — trust the local copy (it may hold
-            // an edit that hadn't round-tripped yet) and push it back up
-            // rather than reverting to what's on the server.
-            remoteJson.current = initialLocalJson.current as string;
-            safeSet(r, JSON.parse(initialLocalJson.current as string));
+          const localEnv = initialLocalEnvelope.current;
+          if (localEnv && (!remoteEnv || localEnv.updatedAt > remoteEnv.updatedAt)) {
+            // This device's own copy is newer than what the server has (or
+            // the server has nothing yet) — keep it and push it up, rather
+            // than accepting older/no server data just because it's remote.
+            remoteEnvelopeJson.current = JSON.stringify(localEnv);
+            safeSet(r, localEnv);
             return;
           }
         }
 
-        remoteJson.current = incomingJson;
-        if (v !== null && v !== undefined) {
-          setValue(v as T);
-          try { localStorage.setItem(localKey, incomingJson); } catch {}
+        if (remoteEnv) {
+          remoteEnvelopeJson.current = JSON.stringify(remoteEnv);
+          setValue(remoteEnv.data);
+          try { localStorage.setItem(localKey, JSON.stringify(remoteEnv)); } catch {}
         }
       },
       () => setReady(true)
@@ -127,11 +140,12 @@ export function useSyncedValue<T>(path: string, localKey: string, initial: T): [
   const update = (updater: T | ((prev: T) => T)) => {
     setValue((prev) => {
       const next = typeof updater === "function" ? (updater as (p: T) => T)(prev) : updater;
-      const json = JSON.stringify(next);
+      const envelope: Envelope<T> = { data: next, updatedAt: Date.now() };
+      const json = JSON.stringify(envelope);
       try { localStorage.setItem(localKey, json); } catch {}
-      if (database && json !== remoteJson.current) {
-        remoteJson.current = json;
-        safeSet(ref(database, path), next);
+      if (database && json !== remoteEnvelopeJson.current) {
+        remoteEnvelopeJson.current = json;
+        safeSet(ref(database, path), envelope);
       }
       return next;
     });
