@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Lock, Plus, Scale, Share2, Trash2, Unlock, X } from "lucide-react";
+import { Edit2, Lock, Plus, Scale, Share2, Trash2, Unlock, Users, X } from "lucide-react";
 import { PeopleEditor, SectionHeader } from "./shared";
 import { uid } from "../lib/util";
 import { computeBalances, simplifySettlements } from "../lib/split";
@@ -46,7 +46,9 @@ export function BudgetSection({
   const emptyForm = { desc: "", cat: "Hotel", zone: "General", amount: "", paidBy: "", splitAmong: [] as string[] };
   const [form, setForm] = useState(emptyForm);
   const [addOpen, setAddOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [lockedSplits, setLockedSplits] = useState<Record<string, number>>({});
+  const [peopleOpen, setPeopleOpen] = useState(false);
 
   const amountNum = parseFloat(form.amount) || 0;
   const splitPreview = useMemo(() => distributeSplit(form.splitAmong, amountNum, lockedSplits), [form.splitAmong, amountNum, lockedSplits]);
@@ -90,19 +92,25 @@ export function BudgetSection({
     });
   };
 
-  const openAdd = () => { setForm(emptyForm); setLockedSplits({}); setAddOpen(true); };
+  const openAdd = () => { setForm(emptyForm); setLockedSplits({}); setEditingId(null); setAddOpen(true); };
+  const openEdit = (item: BudgetItem) => {
+    setForm({ desc: item.desc, cat: item.cat, zone: item.zone, amount: String(item.amount), paidBy: item.paidBy ?? "", splitAmong: item.splitAmong ?? [] });
+    setLockedSplits(item.splitAmounts ?? {});
+    setEditingId(item.id);
+    setAddOpen(true);
+  };
   const closeAdd = () => setAddOpen(false);
 
-  const add = () => {
+  const submit = () => {
     const amount = parseFloat(form.amount);
     if (!form.desc.trim() || isNaN(amount) || amount <= 0) return;
-    const item: BudgetItem = { id: uid(), desc: form.desc.trim(), cat: form.cat, zone: form.zone, amount };
+    const item: BudgetItem = { id: editingId ?? uid(), desc: form.desc.trim(), cat: form.cat, zone: form.zone, amount };
     if (form.paidBy) item.paidBy = form.paidBy;
     if (form.splitAmong.length > 0) {
       item.splitAmong = form.splitAmong;
       item.splitAmounts = distributeSplit(form.splitAmong, amount, lockedSplits);
     }
-    setItems((its) => [...its, item]);
+    setItems((its) => (editingId ? its.map((x) => (x.id === editingId ? item : x)) : [...its, item]));
     setAddOpen(false);
   };
 
@@ -122,8 +130,8 @@ export function BudgetSection({
       <SectionHeader
         eyebrow="Control de gastos" title="Presupuesto"
         action={
-          <button onClick={openAdd} className="w-9 h-9 flex items-center justify-center bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-opacity flex-shrink-0" aria-label="Añadir gasto">
-            <Plus size={17} />
+          <button onClick={() => setPeopleOpen(true)} title="Quién viaja" className="w-9 h-9 flex items-center justify-center bg-muted text-muted-foreground rounded-full hover:text-foreground transition-colors flex-shrink-0" aria-label="Quién viaja">
+            <Users size={16} />
           </button>
         }
       />
@@ -135,6 +143,13 @@ export function BudgetSection({
         <span className="text-muted-foreground text-sm">total</span>
       </div>
 
+      <button
+        onClick={openAdd}
+        className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-base bg-primary text-primary-foreground hover:opacity-90 transition-all active:scale-95 mb-7"
+      >
+        <Plus size={19} /> Añadir gasto
+      </button>
+
       {byCategory.length > 0 && (
         <div className="flex gap-2 overflow-x-auto mb-7 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap" style={{ scrollbarWidth: "none" }}>
           {byCategory.map(({ cat, total: t }) => (
@@ -145,13 +160,6 @@ export function BudgetSection({
           ))}
         </div>
       )}
-
-      {/* People */}
-      <div className="bg-card border border-border rounded-2xl p-4 mb-5">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Quién viaja</p>
-        <PeopleEditor people={people} setPeople={setPeopleAndClean} />
-        {people.length === 0 && <p className="text-xs text-muted-foreground mt-2">Añade quién viaja para repartir los gastos automáticamente entre todos.</p>}
-      </div>
 
       {items.length > 0 ? (
         <div className="bg-card border border-border rounded-2xl overflow-hidden mb-5 divide-y divide-border">
@@ -166,13 +174,22 @@ export function BudgetSection({
                 </div>
               </div>
               <div className="text-sm font-semibold flex-shrink-0" style={{ fontFamily: "var(--font-mono)" }}>{fmt(item.amount)} {SYMBOL}</div>
-              <button
-                onClick={() => setItems((its) => its.filter((x) => x.id !== item.id))}
-                className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0 sm:opacity-0 sm:group-hover:opacity-100"
-                aria-label="Eliminar gasto"
-              >
-                <Trash2 size={14} />
-              </button>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={() => openEdit(item)}
+                  className="text-muted-foreground hover:text-info transition-colors"
+                  aria-label="Editar gasto"
+                >
+                  <Edit2 size={13} />
+                </button>
+                <button
+                  onClick={() => setItems((its) => its.filter((x) => x.id !== item.id))}
+                  className="text-muted-foreground hover:text-destructive transition-colors sm:opacity-0 sm:group-hover:opacity-100"
+                  aria-label="Eliminar gasto"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           ))}
           <div className="flex items-center justify-between px-4 py-3.5 bg-muted/30">
@@ -236,11 +253,26 @@ export function BudgetSection({
         <Share2 size={16} /> Compartir actualización
       </button>
 
+      {peopleOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPeopleOpen(false)}>
+          <div className="bg-card border border-border rounded-2xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Quién viaja</p>
+              <button onClick={() => setPeopleOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            <PeopleEditor people={people} setPeople={setPeopleAndClean} />
+            {people.length === 0 && <p className="text-xs text-muted-foreground mt-2">Añade quién viaja para repartir los gastos automáticamente entre todos.</p>}
+          </div>
+        </div>
+      )}
+
       {addOpen && (
         <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={closeAdd}>
           <div className="bg-card border border-border rounded-2xl w-full max-w-md max-h-[85vh] overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Añadir gasto</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{editingId ? "Editar gasto" : "Añadir gasto"}</p>
               <button onClick={closeAdd} className="text-muted-foreground hover:text-foreground transition-colors">
                 <X size={16} />
               </button>
@@ -251,7 +283,7 @@ export function BudgetSection({
                 className="w-full text-sm bg-muted rounded-xl px-3 py-2.5 outline-none placeholder:text-muted-foreground"
                 placeholder="Descripción" value={form.desc}
                 onChange={(e) => setForm((p) => ({ ...p, desc: e.target.value }))}
-                onKeyDown={(e) => e.key === "Enter" && add()}
+                onKeyDown={(e) => e.key === "Enter" && submit()}
               />
               <div className="grid grid-cols-2 gap-2">
                 <select className="text-sm bg-muted rounded-xl px-3 py-2.5 outline-none cursor-pointer" value={form.cat} onChange={(e) => setForm((p) => ({ ...p, cat: e.target.value }))}>
@@ -266,7 +298,7 @@ export function BudgetSection({
                 className="w-full text-sm bg-muted rounded-xl px-3 py-2.5 outline-none placeholder:text-muted-foreground"
                 placeholder={`Importe (${SYMBOL})`} value={form.amount}
                 onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))}
-                onKeyDown={(e) => e.key === "Enter" && add()}
+                onKeyDown={(e) => e.key === "Enter" && submit()}
               />
 
               {people.length > 0 && (
@@ -333,8 +365,8 @@ export function BudgetSection({
                 </div>
               )}
 
-              <button onClick={add} className="w-full mt-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium">
-                Añadir gasto
+              <button onClick={submit} className="w-full mt-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium">
+                {editingId ? "Guardar cambios" : "Añadir gasto"}
               </button>
             </div>
           </div>
