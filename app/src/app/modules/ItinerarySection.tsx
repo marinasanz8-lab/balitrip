@@ -54,7 +54,8 @@ export function ItinerarySection({
   const [newActs, setNewActs] = useState<Record<string, string>>({});
   const [newDayLabel, setNewDayLabel] = useState("");
   const [newZoneName, setNewZoneName] = useState("");
-  const [addZoneOpen, setAddZoneOpen] = useState(false);
+  const [zonesModalOpen, setZonesModalOpen] = useState(false);
+  const [confirmDeleteZone, setConfirmDeleteZone] = useState<number | null>(null);
   const [renamingIdx, setRenamingIdx] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [editingDay, setEditingDay] = useState<string | null>(null);
@@ -220,16 +221,22 @@ export function ItinerarySection({
 
   const addZone = () => {
     const name = newZoneName.trim();
-    if (!name) { setAddZoneOpen(false); return; }
+    if (!name) return;
     const emoji = TRIP_EMOJIS[zones.length % TRIP_EMOJIS.length];
     setZones((zs) => [...zs, { id: uid(), name, emoji, days: [] }]);
     setNewZoneName("");
     setActiveZone(zones.length);
-    setAddZoneOpen(false);
   };
 
   const delZone = (i: number) => {
     setZones((zs) => zs.filter((_, idx) => idx !== i));
+    setConfirmDeleteZone(null);
+  };
+
+  const closeZonesModal = () => {
+    setZonesModalOpen(false);
+    setConfirmDeleteZone(null);
+    setNewZoneName("");
   };
 
   useEffect(() => {
@@ -323,52 +330,31 @@ export function ItinerarySection({
       ) : (
         <>
           <div className="max-w-4xl mx-auto px-4">
-            <div ref={tabsRef} className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-              {zones.map((z, i) => {
-                const isActive = i === activeZone;
-                const col = ZONE_COLORS[i % ZONE_COLORS.length];
-                return (
-                  <div
-                    key={z.id}
-                    className="flex-shrink-0 flex items-center rounded-full overflow-hidden transition-all"
-                    style={{ backgroundColor: isActive ? col : "var(--muted)" }}
-                  >
+            <div className="flex items-center gap-2">
+              <div ref={tabsRef} className="flex gap-2 overflow-x-auto pb-1 flex-1 min-w-0" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                {zones.map((z, i) => {
+                  const isActive = i === activeZone;
+                  const col = ZONE_COLORS[i % ZONE_COLORS.length];
+                  return (
                     <button
+                      key={z.id}
                       onClick={() => setActiveZone(i)}
-                      className="flex items-center gap-1.5 pl-3.5 pr-2 py-2 text-sm font-medium"
-                      style={{ color: isActive ? "#fff" : "var(--muted-foreground)" }}
+                      className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all"
+                      style={{ backgroundColor: isActive ? col : "var(--muted)", color: isActive ? "#fff" : "var(--muted-foreground)" }}
                     >
                       <span className="text-base">{z.emoji}</span>
                       <span className="whitespace-nowrap">{z.name}</span>
                     </button>
-                    <button
-                      onClick={() => delZone(i)}
-                      className="pl-1 pr-3 py-2"
-                      style={{ color: isActive ? "rgba(255,255,255,0.7)" : "var(--muted-foreground)" }}
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                );
-              })}
-              {addZoneOpen ? (
-                <input
-                  autoFocus
-                  value={newZoneName}
-                  onChange={(e) => setNewZoneName(e.target.value)}
-                  onBlur={addZone}
-                  onKeyDown={(e) => { if (e.key === "Enter") addZone(); if (e.key === "Escape") { setNewZoneName(""); setAddZoneOpen(false); } }}
-                  placeholder="Nombre de la zona"
-                  className="flex-shrink-0 text-sm font-medium px-3.5 py-2 rounded-full bg-muted outline-none ring-2 ring-info w-36"
-                />
-              ) : (
-                <button
-                  onClick={() => setAddZoneOpen(true)}
-                  className="flex-shrink-0 flex items-center gap-1 pl-2.5 pr-3 py-2 rounded-full text-xs font-medium border border-dashed border-border text-muted-foreground hover:text-info hover:border-info/50 transition-colors"
-                >
-                  <Plus size={13} /> Nueva zona
-                </button>
-              )}
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setZonesModalOpen(true)}
+                title="Gestionar zonas"
+                className="flex-shrink-0 w-9 h-9 rounded-full border border-dashed border-border text-muted-foreground hover:text-info hover:border-info/50 transition-colors flex items-center justify-center"
+              >
+                <Edit2 size={14} />
+              </button>
             </div>
           </div>
 
@@ -540,6 +526,65 @@ export function ItinerarySection({
             </div>
           )}
         </>
+      )}
+
+      {zonesModalOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={closeZonesModal}>
+          <div className="bg-card border border-border rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Gestionar zonas</p>
+              <button onClick={closeZonesModal} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+
+            {zones.length > 0 ? (
+              <ul className="space-y-2 mb-4">
+                {zones.map((z, i) => (
+                  <li key={z.id} className="bg-muted rounded-xl px-3 py-2.5">
+                    {confirmDeleteZone === i ? (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          ¿Eliminar «{z.name}» y sus {z.days.length} día{z.days.length !== 1 ? "s" : ""}?
+                        </span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button onClick={() => delZone(i)} className="text-xs font-medium text-destructive hover:opacity-70 transition-opacity">Eliminar</button>
+                          <button onClick={() => setConfirmDeleteZone(null)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium flex items-center gap-1.5">
+                          <span>{z.emoji}</span> {z.name}
+                          <span className="text-[11px] text-muted-foreground font-normal">({z.days.length} día{z.days.length !== 1 ? "s" : ""})</span>
+                        </span>
+                        <button onClick={() => setConfirmDeleteZone(i)} className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-muted-foreground mb-4">Aún no hay zonas o etapas.</p>
+            )}
+
+            <label className="text-xs text-muted-foreground block mb-1">Añadir zona</label>
+            <div className="flex gap-2">
+              <input
+                value={newZoneName}
+                onChange={(e) => setNewZoneName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addZone()}
+                placeholder="Nombre de la zona"
+                className="flex-1 text-sm bg-muted rounded-xl px-3 py-2.5 outline-none placeholder:text-muted-foreground"
+              />
+              <button onClick={addZone} className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity flex-shrink-0">
+                <Plus size={15} />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {addDayOpen && (
