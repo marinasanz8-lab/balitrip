@@ -135,7 +135,7 @@ export function TripView({ tripId, onBack, onSettings }: { tripId: string; onBac
       ) : (
         enabled.map((m, i) => (
           <div key={m}>
-            {renderModule(m, meta, data, update, shareLink)}
+            {renderModule(m, meta, data, update)}
             {i < enabled.length - 1 && <Divider />}
           </div>
         ))
@@ -160,8 +160,7 @@ function renderModule(
   m: ModuleId,
   meta: TripMeta,
   data: TripData,
-  update: (updater: TripData | ((p: TripData) => TripData)) => void,
-  onShare: () => void
+  update: (updater: TripData | ((p: TripData) => TripData)) => void
 ) {
   switch (m) {
     case "conversor":
@@ -186,7 +185,6 @@ function renderModule(
           people={data.people}
           setPeople={fieldSetter(update, "people")}
           zones={dedupZones(data.itineraries)}
-          onShare={onShare}
         />
       );
     default:

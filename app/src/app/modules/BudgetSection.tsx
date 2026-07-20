@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Edit2, Lock, Plus, Scale, Share2, Trash2, Unlock, Users, X } from "lucide-react";
+import { Edit2, Lock, Plus, Scale, Trash2, Unlock, Users, X } from "lucide-react";
 import { PeopleEditor, SectionHeader } from "./shared";
 import { uid } from "../lib/util";
 import { computeBalances, simplifySettlements } from "../lib/split";
@@ -33,14 +33,12 @@ export function BudgetSection({
   people,
   setPeople,
   zones,
-  onShare,
 }: {
   items: BudgetItem[];
   setItems: (v: BudgetItem[] | ((p: BudgetItem[]) => BudgetItem[])) => void;
   people: Person[];
   setPeople: (v: Person[] | ((p: Person[]) => Person[])) => void;
   zones: Zone[];
-  onShare: () => void;
 }) {
   const budgetZones = useMemo(() => ["General", ...zones.map((z) => z.name)], [zones]);
   const emptyForm = { desc: "", cat: "Hotel", zone: "General", amount: "", paidBy: "", splitAmong: [] as string[] };
@@ -145,7 +143,7 @@ export function BudgetSection({
 
       <button
         onClick={openAdd}
-        className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-base bg-primary text-primary-foreground hover:opacity-90 transition-all active:scale-95 mb-7"
+        className="mx-1 w-[calc(100%-8px)] flex items-center justify-center gap-2 py-4 rounded-2xl font-semibold text-base bg-primary text-primary-foreground hover:opacity-90 transition-all active:scale-95 mb-7"
       >
         <Plus size={19} /> Añadir gasto
       </button>
@@ -244,14 +242,6 @@ export function BudgetSection({
           )}
         </div>
       )}
-
-      <button
-        onClick={onShare}
-        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-medium text-sm transition-all active:scale-95"
-        style={{ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }}
-      >
-        <Share2 size={16} /> Compartir actualización
-      </button>
 
       {peopleOpen && (
         <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPeopleOpen(false)}>
