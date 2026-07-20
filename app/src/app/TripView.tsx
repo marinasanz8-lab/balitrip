@@ -169,7 +169,7 @@ function renderModule(
     case "hoteles":
       return <HotelsSection hotels={data.hotels} setHotels={fieldSetter(update, "hotels")} />;
     case "itinerario":
-      return <ItinerarySection itineraries={data.itineraries} setItineraries={fieldSetter(update, "itineraries")} tours={data.tours} />;
+      return <ItinerarySection itineraries={data.itineraries} setItineraries={fieldSetter(update, "itineraries")} tours={data.tours} destination={meta.destination} />;
     case "tours":
       return <TourSection tours={data.tours} setTours={fieldSetter(update, "tours")} itineraries={data.itineraries} />;
     case "presupuesto":

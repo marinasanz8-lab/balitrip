@@ -58,7 +58,9 @@ export type HotelData = {
   bookingLink?: string;
 };
 
-export type Activity = { id: string; text: string };
+export type GeoPlace = { lat: number; lng: number; label: string };
+/** undefined = never looked up; false = looked up, nothing found. */
+export type Activity = { id: string; text: string; place?: GeoPlace | false };
 export type Day = {
   id: string;
   label: string;

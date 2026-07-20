@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Compass, Edit2, Plus, Save, Trash2, User, X } from "lucide-react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Compass, Edit2, Map, Plus, Save, Trash2, User, X } from "lucide-react";
 import { SectionHeader } from "./shared";
 import { fileToResizedDataUrl, uid } from "../lib/util";
-import { ZONE_COLORS, TRIP_EMOJIS, type Activity, type Day, type Itinerary, type Tour, type Zone } from "../types";
+import { ZONE_COLORS, TRIP_EMOJIS, type Activity, type Day, type GeoPlace, type Itinerary, type Tour, type Zone } from "../types";
+
+const ItineraryMap = lazy(() => import("./ItineraryMap").then((m) => ({ default: m.ItineraryMap })));
 
 function compactDate(day: Day): string {
   if (day.date) {
@@ -44,13 +46,16 @@ export function ItinerarySection({
   itineraries,
   setItineraries,
   tours = [],
+  destination = "",
 }: {
   itineraries: Itinerary[];
   setItineraries: (v: Itinerary[] | ((p: Itinerary[]) => Itinerary[])) => void;
   tours?: Tour[];
+  destination?: string;
 }) {
   const [activeItin, setActiveItin] = useState(0);
   const [activeZone, setActiveZone] = useState(0);
+  const [mapOpen, setMapOpen] = useState(false);
   const [newActs, setNewActs] = useState<Record<string, string>>({});
   const [newDayLabel, setNewDayLabel] = useState("");
   const [newZoneName, setNewZoneName] = useState("");
@@ -144,6 +149,12 @@ export function ItinerarySection({
     const arr = [...day.activities];
     [arr[idx], arr[swapWith]] = [arr[swapWith], arr[idx]];
     updateDay(did, { activities: arr });
+  };
+
+  const setActivityPlace = (did: string, aid: string, place: GeoPlace | false) => {
+    const day = days.find((d) => d.id === did);
+    if (!day) return;
+    updateDay(did, { activities: day.activities.map((a) => (a.id === aid ? { ...a, place } : a)) });
   };
 
   const moveAct = (fromDayId: string, activityId: string, toDayId: string) => {
@@ -357,6 +368,28 @@ export function ItinerarySection({
           </div>
 
           {zone && (
+            <div className="px-4 max-w-4xl mx-auto mt-4">
+              <button
+                onClick={() => setMapOpen((v) => !v)}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-info/10 text-info hover:bg-info/20 transition-colors"
+              >
+                <Map size={13} /> {mapOpen ? "Ocultar mapa" : "Ver mapa"}
+              </button>
+              {mapOpen && (
+                <div className="mt-3">
+                  <Suspense fallback={<div className="h-32 bg-muted rounded-2xl animate-pulse" />}>
+                    <ItineraryMap
+                      zone={zone}
+                      geoContext={[zone.name, destination].filter(Boolean).join(", ")}
+                      onSetPlace={setActivityPlace}
+                    />
+                  </Suspense>
+                </div>
+              )}
+            </div>
+          )}
+
+          {zone && (
             <div className="px-4 max-w-4xl mx-auto mt-6">
               {days.map((day, dIdx) => {
                 const photos = day.photos ?? [];
@@ -458,43 +491,32 @@ export function ItinerarySection({
                             {day.activities.map((a, aidx) => (
                               <li key={a.id} className="flex items-start gap-2.5 group">
                                 <div className="w-1 h-1 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: color }} />
-                                {editingAct?.dayId === day.id && editingAct.actId === a.id ? (
-                                  <input
-                                    autoFocus
-                                    value={editActText}
-                                    onChange={(e) => setEditActText(e.target.value)}
-                                    onBlur={saveEditAct}
-                                    onKeyDown={(e) => { if (e.key === "Enter") saveEditAct(); if (e.key === "Escape") cancelEditAct(); }}
-                                    className="flex-1 text-sm leading-relaxed bg-muted rounded-lg px-2 py-0.5 outline-none ring-1 ring-info"
-                                  />
-                                ) : (
-                                  <span
-                                    onClick={() => startEditAct(day.id, a)}
-                                    className="flex-1 text-sm leading-relaxed cursor-text hover:bg-muted/60 rounded-lg px-0.5 -mx-0.5 transition-colors"
-                                  >
-                                    {a.text}
-                                  </span>
-                                )}
-                                <div className="opacity-0 group-hover:opacity-100 transition-all flex items-center flex-shrink-0">
-                                  <button onClick={() => reorderAct(day.id, a.id, -1)} disabled={aidx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:pointer-events-none transition-colors p-0.5">
-                                    <ChevronUp size={12} />
+                                <span className="flex-1 text-sm leading-relaxed">{a.text}</span>
+                                <div className="flex items-center flex-shrink-0">
+                                  <div className="hidden sm:flex items-center opacity-0 group-hover:opacity-100 transition-all">
+                                    <button onClick={() => reorderAct(day.id, a.id, -1)} disabled={aidx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:pointer-events-none transition-colors p-0.5">
+                                      <ChevronUp size={12} />
+                                    </button>
+                                    <button onClick={() => reorderAct(day.id, a.id, 1)} disabled={aidx === day.activities.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:pointer-events-none transition-colors p-0.5">
+                                      <ChevronDown size={12} />
+                                    </button>
+                                    {allDayOptions.length > 1 && (
+                                      <select
+                                        defaultValue=""
+                                        title="Mover a otro día"
+                                        onChange={(e) => { moveAct(day.id, a.id, e.target.value); e.currentTarget.value = ""; }}
+                                        className="text-[11px] bg-transparent text-muted-foreground hover:text-foreground outline-none cursor-pointer ml-1"
+                                      >
+                                        <option value="" disabled>→ mover</option>
+                                        {allDayOptions.filter((o) => o.id !== day.id).map((o) => (
+                                          <option key={o.id} value={o.id}>{o.label}</option>
+                                        ))}
+                                      </select>
+                                    )}
+                                  </div>
+                                  <button onClick={() => startEditAct(day.id, a)} className="text-muted-foreground hover:text-info transition-colors ml-1 p-0.5">
+                                    <Edit2 size={12} />
                                   </button>
-                                  <button onClick={() => reorderAct(day.id, a.id, 1)} disabled={aidx === day.activities.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:pointer-events-none transition-colors p-0.5">
-                                    <ChevronDown size={12} />
-                                  </button>
-                                  {allDayOptions.length > 1 && (
-                                    <select
-                                      defaultValue=""
-                                      title="Mover a otro día"
-                                      onChange={(e) => { moveAct(day.id, a.id, e.target.value); e.currentTarget.value = ""; }}
-                                      className="text-[11px] bg-transparent text-muted-foreground hover:text-foreground outline-none cursor-pointer ml-1"
-                                    >
-                                      <option value="" disabled>→ mover</option>
-                                      {allDayOptions.filter((o) => o.id !== day.id).map((o) => (
-                                        <option key={o.id} value={o.id}>{o.label}</option>
-                                      ))}
-                                    </select>
-                                  )}
                                   <button onClick={() => delAct(day.id, a.id)} className="text-muted-foreground hover:text-destructive transition-colors ml-1 p-0.5">
                                     <X size={12} />
                                   </button>
@@ -587,6 +609,30 @@ export function ItinerarySection({
             >
               <Camera size={15} /> Subir fotos
             </button>
+          </div>
+        </div>
+      )}
+
+      {editingAct && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={cancelEditAct}>
+          <div className="bg-card border border-border rounded-2xl w-full max-w-lg p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Editar actividad</p>
+              <button onClick={cancelEditAct} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            <textarea
+              autoFocus
+              className="w-full text-sm bg-muted rounded-xl px-3 py-2.5 outline-none placeholder:text-muted-foreground resize-y leading-relaxed"
+              rows={5}
+              value={editActText}
+              onChange={(e) => setEditActText(e.target.value)}
+            />
+            <div className="flex gap-2 mt-4">
+              <button onClick={saveEditAct} className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium">Guardar</button>
+              <button onClick={cancelEditAct} className="px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
+            </div>
           </div>
         </div>
       )}
