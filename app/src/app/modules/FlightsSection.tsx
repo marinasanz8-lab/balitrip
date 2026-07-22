@@ -80,7 +80,7 @@ export function FlightsSection({ flights, setFlights }: { flights: FlightData[];
   };
 
   return (
-    <section id="vuelos" className="py-14 px-4 max-w-4xl mx-auto">
+    <section id="vuelos" className="py-14 md:py-20 px-4 max-w-4xl mx-auto">
       <SectionHeader eyebrow="Trayectos" title="Vuelos" />
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChosen} />
       {aiError && <p className="text-xs text-destructive mb-4">{aiError}</p>}

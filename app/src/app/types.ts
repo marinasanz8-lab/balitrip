@@ -191,5 +191,5 @@ export function normalizeTripData(raw: unknown): TripData {
 export const BUDGET_CATS = ["Vuelo", "Hotel", "Traslado", "Excursión", "Comida", "Compras", "Otros"];
 export const ZONE_COLORS = ["#D97706", "#16A34A", "#0891B2", "#7C3AED", "#C2410C", "#0369A1", "#475569"];
 
-export const TRIP_COLORS = ["#B85525", "#5E8E65", "#3B7DA8", "#8B5CF6", "#C2410C", "#0F766E", "#BE185D"];
+export const TRIP_COLORS = ["#B85525", "#5E8E65", "#2A6FDB", "#8B5CF6", "#C2410C", "#0F766E", "#BE185D"];
 export const TRIP_EMOJIS = ["🏝️", "🏔️", "🏛️", "🌆", "🗼", "🏜️", "🌋", "⛩️", "🏰", "🚢", "🎡", "🧭"];

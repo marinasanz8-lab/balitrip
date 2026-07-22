@@ -124,7 +124,7 @@ export function BudgetSection({
   const sortedItems = useMemo(() => [...items].reverse(), [items]);
 
   return (
-    <section id="presupuesto" className="py-14 px-4 max-w-4xl mx-auto">
+    <section id="presupuesto" className="py-14 md:py-20 px-4 max-w-4xl mx-auto">
       <SectionHeader
         eyebrow="Control de gastos" title="Presupuesto"
         action={

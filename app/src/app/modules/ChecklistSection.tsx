@@ -59,7 +59,7 @@ export function ChecklistSection({
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   return (
-    <section id="checklist" className="py-14 px-4 max-w-4xl mx-auto">
+    <section id="checklist" className="py-14 md:py-20 px-4 max-w-4xl mx-auto">
       <div className="flex items-end justify-between mb-5">
         <SectionHeader eyebrow="Antes de salir" title="Checklist" />
         {total > 0 && (

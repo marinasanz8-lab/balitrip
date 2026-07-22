@@ -70,7 +70,7 @@ export function HotelsSection({ hotels, setHotels }: { hotels: HotelData[]; setH
   };
 
   return (
-    <section id="hoteles" className="py-14">
+    <section id="hoteles" className="py-14 md:py-20">
       <div className="px-4 max-w-4xl mx-auto mb-6">
         <SectionHeader eyebrow="Alojamientos" title="Hoteles" />
       </div>
@@ -86,7 +86,7 @@ export function HotelsSection({ hotels, setHotels }: { hotels: HotelData[]; setH
               <button
                 onClick={() => scrollTo(activeIdx - 1)}
                 disabled={activeIdx === 0}
-                className="hidden sm:flex absolute left-1 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-9 h-9 rounded-full bg-card border border-border shadow-md items-center justify-center text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                className="hidden sm:flex absolute left-1 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-9 h-9 rounded-full bg-card border border-border items-center justify-center text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none"
               >
                 <ChevronLeft size={18} />
               </button>
@@ -104,8 +104,8 @@ export function HotelsSection({ hotels, setHotels }: { hotels: HotelData[]; setH
                   key={h.id}
                   style={{ scrollSnapAlign: "start", flexShrink: 0, width: "clamp(240px, 80vw, 280px)" }}
                 >
-                  <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm h-full flex flex-col">
-                  <div className="relative h-52 bg-muted overflow-hidden flex-shrink-0">
+                  <div className="bg-card border border-border rounded-2xl overflow-hidden h-full flex flex-col">
+                  <div className="relative h-64 bg-muted overflow-hidden flex-shrink-0">
                     {h.photo ? (
                       <img src={h.photo} alt={h.name} className="w-full h-full object-cover" />
                     ) : (
@@ -167,7 +167,7 @@ export function HotelsSection({ hotels, setHotels }: { hotels: HotelData[]; setH
               <button
                 onClick={() => scrollTo(activeIdx + 1)}
                 disabled={activeIdx === hotels.length - 1}
-                className="hidden sm:flex absolute right-1 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-9 h-9 rounded-full bg-card border border-border shadow-md items-center justify-center text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                className="hidden sm:flex absolute right-1 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-9 h-9 rounded-full bg-card border border-border items-center justify-center text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none"
               >
                 <ChevronRight size={18} />
               </button>

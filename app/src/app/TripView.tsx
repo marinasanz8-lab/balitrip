@@ -92,7 +92,7 @@ export function TripView({ tripId, onBack, onSettings }: { tripId: string; onBac
           )}
         </div>
 
-        <div className="relative z-10 flex flex-wrap items-center justify-center gap-2 px-4 pb-6">
+        <div className="relative z-10 flex md:hidden flex-wrap items-center justify-center gap-2 px-4 pb-6">
           {nav.map((item) => (
             <button
               key={item.id} onClick={() => scrollTo(item.id)}

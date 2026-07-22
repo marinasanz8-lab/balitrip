@@ -373,7 +373,7 @@ export function ItinerarySection({
   }, [activeZone]);
 
   return (
-    <section id="itinerario" className="py-14">
+    <section id="itinerario" className="py-14 md:py-20">
       <div className="px-4 max-w-4xl mx-auto">
         <SectionHeader
           eyebrow="Día a día"

@@ -34,7 +34,7 @@ export function MapSection({
   };
 
   return (
-    <section id="mapa" className="py-14 px-4 max-w-4xl mx-auto">
+    <section id="mapa" className="py-14 md:py-20 px-4 max-w-4xl mx-auto">
       <SectionHeader eyebrow="Ubicaciones" title="Mapa" />
 
       {mapEmbedUrl && !editing ? (

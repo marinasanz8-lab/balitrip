@@ -46,7 +46,7 @@ export function TourSection({ tours, setTours, itineraries }: { tours: Tour[]; s
   const fmtPrice = (p: number | null) => (p == null ? null : `${p.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`);
 
   return (
-    <section id="tours" className="py-14 px-4 max-w-4xl mx-auto">
+    <section id="tours" className="py-14 md:py-20 px-4 max-w-4xl mx-auto">
       <SectionHeader eyebrow="Excursiones" title="Tours" />
 
       {tours.length === 0 ? (

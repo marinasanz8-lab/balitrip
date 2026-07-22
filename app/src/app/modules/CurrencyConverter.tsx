@@ -44,7 +44,7 @@ export function CurrencyConverter({ currency }: { currency: string }) {
   const quick = currency === "IDR" || currency === "VND" ? [50000, 100000, 200000, 500000, 1000000] : [10, 50, 100, 200, 500];
 
   return (
-    <section id="conversor" className="py-14 px-4 max-w-4xl mx-auto">
+    <section id="conversor" className="py-14 md:py-20 px-4 max-w-4xl mx-auto">
       <div className="flex items-end justify-between mb-7">
         <SectionHeader eyebrow="Divisas" title="Conversor" />
         <button onClick={fetchRate} disabled={loading} className="pb-1 text-muted-foreground hover:text-foreground transition-colors">
@@ -79,7 +79,7 @@ export function CurrencyConverter({ currency }: { currency: string }) {
             <div className="relative h-px bg-border">
               <button
                 onClick={() => setReversed((r) => !r)}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-info hover:border-info transition-all shadow-sm"
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-info hover:border-info transition-all"
               >
                 <ArrowDownUp size={14} />
               </button>
