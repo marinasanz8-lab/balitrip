@@ -70,7 +70,7 @@ export function HotelsSection({ hotels, setHotels }: { hotels: HotelData[]; setH
   };
 
   return (
-    <section id="hoteles" className="py-14 md:py-20">
+    <section id="hoteles" className="py-16 md:py-24">
       <div className="px-4 max-w-4xl mx-auto mb-6">
         <SectionHeader eyebrow="Alojamientos" title="Hoteles" />
       </div>
